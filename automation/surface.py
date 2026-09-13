@@ -233,10 +233,14 @@ class BrowserSurface:
     async def frame(self, scope="content"):
         if scope == "shell":
             return self.page
-        await self.page.locator(f'iframe[name="{self.tenant.frame_name}"]').wait_for(
-            state="attached"
-        )
-        frame = self.page.frame(name=self.tenant.frame_name)
+        iframe = self.page.locator(f'iframe[name="{self.tenant.frame_name}"]')
+        await iframe.wait_for(state="attached")
+        frame = None
+        for _ in range(50):
+            frame = self.page.frame(name=self.tenant.frame_name)
+            if frame:
+                break
+            await self.page.wait_for_timeout(10)
         if not frame:
             raise AutomationError("FRAME_NOT_FOUND")
         return frame
