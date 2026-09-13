@@ -17,7 +17,7 @@ async def test_hand_authored_executor_primary(bank, inputs):
     events = (
         Path(bank["config"].evidence_dir) / result.run_id / "events.jsonl"
     ).read_text()
-    assert f'"event": "replay_started"' in events
+    assert '"event": "replay_started"' in events
     assert f'"capability_sha256": "{capability_sha256(artifact)}"' in events
 
 

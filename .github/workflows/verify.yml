@@ -12,6 +12,7 @@ jobs:
     name: Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     env:
@@ -27,7 +28,7 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip install --no-deps -e .
           python -m playwright install chromium
-      - name: Run tests
-        run: python -m pytest -q
       - name: Run Ruff
         run: python -m ruff check automation banking_app tests tools --select F
+      - name: Run tests
+        run: python -m pytest -q
