@@ -9,6 +9,7 @@ from .compiler import compile_action, observed_checkpoint
 from .evidence import Evidence, utcnow
 from .models import (
     AutomationError,
+    Action,
     Capability,
     FINAL,
     Ownership,
@@ -90,10 +91,10 @@ async def discover(
                                     action.kind == "extract"
                                     and seen.get(candidate_fingerprint, 0) > 0
                                 ):
-                                    raise AutomationError(
-                                        "INVALID_MODEL_RESPONSE",
-                                        "a different visible action",
-                                        "repeated extract without a state change",
+                                    action = Action(kind="finish")
+                                    evidence.event(
+                                        "repeated_extract_recovered",
+                                        step_id=execution.step_id,
                                     )
                                 break
                             except AutomationError as exc:
