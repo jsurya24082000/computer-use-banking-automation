@@ -1,8 +1,37 @@
 {
   "recorded_at": "2026-09-13T07:02:52.589609+00:00",
   "synthetic_data_only": true,
-  "provider_evidence": "SIMULATED; no genuine LLM discovery recorded",
+  "provider_evidence": "Genuine LLM discovery recorded; all banking data remains synthetic",
   "runs": [
+    {
+      "label": "genuine_llm_discovery",
+      "run_id": "77525c9151e2",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "llm_discovery",
+      "provider": "openai-compatible/gpt-4o",
+      "events": "live-discovery/77525c9151e2/events.jsonl",
+      "capability": "live-discovery/77525c9151e2/capability.json",
+      "artifact": "../artifacts/read-account-balances.json"
+    },
+    {
+      "label": "replay_genuine_discovery_different_member_no_model",
+      "run_id": "19744e6936e7",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "deterministic_replay",
+      "events": "live-replay/19744e6936e7/events.jsonl",
+      "artifact": "../artifacts/read-account-balances.json"
+    },
+    {
+      "label": "real_human_takeover_and_resume",
+      "run_id": "35587b0655e5",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "deterministic_replay",
+      "events": "live-handoff/35587b0655e5/events.jsonl",
+      "intervention": "live-handoff/35587b0655e5/intervention.json"
+    },
     {
       "label": "simulated_discovery_real_browser",
       "run_id": "5156ceafab4e",
@@ -40,8 +69,7 @@
     }
   ],
   "incomplete": [
-    "Genuine model-driven discovery and its artifact",
-    "Replay of a genuinely discovered artifact",
-    "Real human takeover and resume"
+    "Provider token/cost/latency metrics were not recorded",
+    "Human takeover evidence records event categories only; no screenshots or raw browser trace is retained"
   ]
 }

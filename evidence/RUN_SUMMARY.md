@@ -2,25 +2,27 @@
 
 **Scope:** repository evidence already present at audit time. This document does not
 claim any run, interaction, model call, or metric that is not recorded in the cited
-files. The dataset is synthetic only.
+files. Banking data is synthetic only; the live discovery used a real configured
+provider.
 
 ## Genuine discovery
 
 | Item | Status | Evidence | Audit note |
 |---|---|---|---|
-| Genuine LLM discovery | **Not recorded / not run** | `evidence/README.md`; `evidence/manifest.json`; `REPORT.md` | The repository explicitly records that model credentials were unavailable. No provider response, model transcript, credential, cookie, raw member identifier, or banking output value is included. |
-| Genuine discovery artifact | **Not recorded / not run** | `evidence/manifest.json` | `evidence/offline/5156ceafab4e/capability.json` is labeled `simulated_discovery`; it is not genuine discovery evidence. |
+| Genuine LLM discovery | Success | `evidence/live-discovery/77525c9151e2/events.jsonl` | `llm_discovery`, provider `openai-compatible/gpt-4o`, run `SUCCESS`; duration measured from recorded events: 23.217 seconds. |
+| Genuine discovery artifact | Recorded and linked | `evidence/live-discovery/77525c9151e2/capability.json`; `artifacts/read-account-balances.json` | Both files have the same SHA-256 (`090515FF...1739CE3`); artifact provenance identifies run `77525c9151e2`. No credentials, cookies, raw member identifiers, or financial outputs are present. |
 
 ## Deterministic replay
 
 | Run | Status | Evidence | Measured result |
 |---|---|---|---|
 | Replay of the checked-in simulated capability with a different invocation | Success | `evidence/offline/03f645c07c91/events.jsonl`; `evidence/manifest.json` | The event log records `deterministic_replay`, ordered actions through `finish`, and `SUCCESS`. No output values are reproduced here. |
-| Replay of a genuinely discovered artifact | **Not recorded / not run** | `evidence/README.md`; `evidence/manifest.json` | Depends on the unrecorded genuine discovery deliverable. |
+| Replay of the genuinely discovered artifact with a different invocation | Success | `evidence/live-replay/19744e6936e7/events.jsonl`; `artifacts/read-account-balances.json` | `deterministic_replay`, `SUCCESS`, and recorded duration of 2.896 seconds. |
 
-The replay event log records timestamps for each event, but this audit does not claim
-a comparative speedup: no paired baseline and replay duration measurement was
-provided for a single comparable workflow.
+The live discovery and replay are comparable single-run executions of the same
+capability workflow: 23.217 seconds versus 2.896 seconds, a measured difference of
+20.321 seconds (about 8.0x elapsed-time ratio). This is not a causal benchmark and
+does not include model token or cost data.
 
 ## Runtime scenarios
 
@@ -30,14 +32,15 @@ provided for a single comparable workflow.
 | Business outcome | Recorded | `evidence/offline/63695471525e/events.jsonl`; `evidence/offline/63695471525e/failure-snapshot.json` | Run finished with `business_outcome` / `MEMBER_NOT_FOUND`; snapshot is sanitized and contains no raw member identifier or financial output. |
 | Recoverable read failure | Success | `evidence/offline/225308a6b01c/events.jsonl` | One recorded `RETRY_VISIBLE_READ_LINK` recovery, followed by account-details verification and `SUCCESS`. |
 | Intervention request without operator | Recorded | `evidence/offline/2659d4cad2b9/events.jsonl`; `evidence/offline/2659d4cad2b9/intervention.json`; `evidence/offline/2659d4cad2b9/failure-snapshot.json` | Ownership transitions to paused; run finishes `intervention_required` / `OPERATOR_UNAVAILABLE`. |
+| Live human takeover and resume | Success | `evidence/live-handoff/35587b0655e5/events.jsonl`; `evidence/live-handoff/35587b0655e5/intervention.json` | `automation → paused → human → automation`; 14 sanitized human interaction events; resume verification and final `SUCCESS`; recorded duration 51.489 seconds. |
 | Earlier app-connectivity attempt | Not a successful run | `evidence/offline/e32067593416/events.jsonl`; `evidence/README.md` | Retained as a failed attempt and excluded from successful demonstrations. |
 
 ## Human takeover and resume
 
 | Item | Status | Evidence | Audit note |
 |---|---|---|---|
-| Real human takeover | **Not recorded / not run** | `evidence/README.md`; `evidence/manifest.json`; `evidence/test-summary.json` | The intervention evidence stops at operator unavailability. |
-| Real human resume | **Not recorded / not run** | Same as above | No real operator, browser handback, or verified resume event is included. |
+| Real human takeover | Recorded | `evidence/live-handoff/35587b0655e5/events.jsonl`; `evidence/live-handoff/35587b0655e5/intervention.json` | Ownership changes to human and sanitized click/input/change/submit/navigation categories are recorded. |
+| Real human resume | Recorded | `evidence/live-handoff/35587b0655e5/events.jsonl` | `resume_verified` records the requested checkpoint, followed by automation ownership and successful completion. |
 | Simulated operator test coverage | Recorded, not human evidence | `evidence/test-summary.json`; `REPORT.md` | The test summary explicitly says takeover tests use a simulated operator and do not establish a real-person demonstration. |
 
 ## Tests
@@ -46,7 +49,7 @@ provided for a single comparable workflow.
 |---|---:|---|---|
 | Pytest suite | 72 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Recorded execution used Python 3.12.14 and Playwright Chromium. |
 | Test duration | 81.573 seconds | `evidence/test-summary.json` | This is the only aggregate timing recorded in the repository. It is not used as a discovery/replay speed comparison. |
-| Genuine-provider test | **Not recorded / not run** | `evidence/test-summary.json`; `evidence/README.md` | Discovery tests use a fake provider. |
+| Genuine-provider test | Not part of suite | `evidence/test-summary.json`; `evidence/live-discovery/77525c9151e2/events.jsonl` | The test suite uses a fake provider; the separate live run records genuine provider discovery. |
 
 ## Evidence handling and unavailable metrics
 
@@ -54,7 +57,7 @@ provided for a single comparable workflow.
   artifacts inspected for this summary.
 - This summary intentionally omits credentials, API keys, cookies, session tokens,
   raw member IDs, banking output values, raw DOM, screenshots, and provider payloads.
-- No cost, token usage, model latency, genuine-discovery duration, human-action
-  duration, or comparable single-run speedup is recorded in the cited evidence.
-- No discovery, model call, publish, push, or external upload was performed for this
-  audit.
+- No token usage, cost, provider API latency, or model billing data is recorded.
+- Event-derived elapsed durations are recorded for the three live runs; human action
+  duration is not isolated from browser/runtime time.
+- No new discovery or model call was performed for this documentation update.

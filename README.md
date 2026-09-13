@@ -10,9 +10,9 @@ A runnable, single-process Python automation engine and a separate **Demo Credit
 
 Implemented: the FastAPI/SQLite banking app, iframe surface, reproducible scenarios, typed artifacts, a configurable real-model adapter, compiler, deterministic replay, policy enforcement, sanitized evidence, and terminal-driven same-browser takeover/resume.
 
-The checked-in evidence demonstrates **real Chromium execution with a simulated provider**, replay with different inputs, a business outcome, a recovered read failure, and an intervention request. A hand-authored artifact is also included solely for executor testing. These are **not evidence of genuine LLM discovery**.
+The checked-in evidence demonstrates **real Chromium execution with a genuine LLM discovery**, replay of its artifact with different inputs, a business outcome, a recovered read failure, and a real human takeover/resume. Simulated-provider runs remain under `evidence/offline/` and are labeled separately. A hand-authored artifact is also included solely for executor testing.
 
-This build environment had no model API credentials and no real person operating a visible browser. Genuine LLM discovery, replay of its artifact, and an actual human takeover/resume demonstration remain to be run using the commands below. The original assignment PDF requires genuine discovery, so the submission is not complete until those demonstrations are captured. Nothing has been published or emailed.
+The genuine discovery, deterministic replay, and human takeover/resume records are preserved under `evidence/live-discovery/`, `evidence/live-replay/`, and `evidence/live-handoff/`. Provider token/cost metrics and raw browser traces are not recorded. Nothing has been emailed; publishing still requires explicit authorization.
 
 See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), and [evidence/test-summary.json](evidence/test-summary.json) for what actually ran. [REPORT.md](REPORT.md) explains the design and limits.
 
@@ -77,7 +77,7 @@ python -m automation.cli discover --provider openai \
   --artifact-out artifacts/read-account-balances.json
 ```
 
-Success writes `artifacts/read-account-balances.json` and a provenance-linked copy under `evidence/local/<run-id>/capability.json`. A model's `finish` response cannot create an artifact unless the final state and every required output validate. Invalid model responses get at most two retries; the run has a 25-step and 120-second default budget.
+Success writes `artifacts/read-account-balances.json` and a provenance-linked copy under `evidence/live-discovery/<run-id>/capability.json` for the recorded live run. A model's `finish` response cannot create an artifact unless the final state and every required output validate. Invalid model responses get at most two retries; the run has a 25-step and 300-second live-run budget when invoked with `--timeout 300`.
 
 Now replay **the same discovered artifact with a different member**, with model access disabled:
 

@@ -1,0 +1,34 @@
+{"at": "2026-09-13T22:13:06.872055+00:00", "event": "run_started", "run_id": "35587b0655e5", "provenance": "deterministic_replay"}
+{"at": "2026-09-13T22:13:07.736090+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s001", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-13T22:13:07.836458+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s001", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-13T22:13:07.872387+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s002", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-13T22:13:07.945602+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s002", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-13T22:13:07.979670+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s003", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-13T22:13:08.252468+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s003", "action": "click", "screen": "member_search"}
+{"at": "2026-09-13T22:13:08.286103+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s004", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-13T22:13:08.372053+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s004", "action": "fill", "screen": "member_search"}
+{"at": "2026-09-13T22:13:08.409304+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s005", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-13T22:13:08.565237+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s005", "action": "click", "screen": "search_results"}
+{"at": "2026-09-13T22:13:08.603427+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s006", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-13T22:13:08.921838+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s006", "action": "click", "screen": "member_overview"}
+{"at": "2026-09-13T22:13:09.068166+00:00", "event": "action_started", "run_id": "35587b0655e5", "step_id": "s007", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-13T22:13:09.280991+00:00", "event": "control_transition", "run_id": "35587b0655e5", "from_state": "automation", "to_state": "paused"}
+{"at": "2026-09-13T22:13:22.417354+00:00", "event": "control_transition", "run_id": "35587b0655e5", "from_state": "paused", "to_state": "human"}
+{"at": "2026-09-13T22:13:35.461313+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "click", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:36.383753+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:36.602380+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:37.119357+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:37.241624+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:37.665567+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:37.806505+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:46.515989+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "change", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:46.594556+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "click", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:47.674333+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "input", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:48.972163+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "change", "tag": "input", "frame": "content"}
+{"at": "2026-09-13T22:13:49.068577+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "click", "tag": "button", "frame": "content"}
+{"at": "2026-09-13T22:13:49.070588+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "submit", "tag": "form", "frame": "content"}
+{"at": "2026-09-13T22:13:49.226388+00:00", "event": "human_interaction", "run_id": "35587b0655e5", "interaction": "navigation", "frame": "content"}
+{"at": "2026-09-13T22:13:58.286979+00:00", "event": "resume_verified", "run_id": "35587b0655e5", "step_id": "s007", "checkpoint": "requested active account and balances"}
+{"at": "2026-09-13T22:13:58.286979+00:00", "event": "control_transition", "run_id": "35587b0655e5", "from_state": "human", "to_state": "automation"}
+{"at": "2026-09-13T22:13:58.299395+00:00", "event": "action_verified", "run_id": "35587b0655e5", "step_id": "s007", "action": "click", "screen": "account_details"}
+{"at": "2026-09-13T22:13:58.361469+00:00", "event": "run_finished", "run_id": "35587b0655e5", "status": "success", "code": "SUCCESS"}
