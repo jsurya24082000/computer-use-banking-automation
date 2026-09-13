@@ -47,8 +47,8 @@ does not include model token or cost data.
 
 | Check | Recorded result | Evidence | Notes |
 |---|---:|---|---|
-| Pytest suite | 72 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Recorded execution used Python 3.12.14 and Playwright Chromium. |
-| Test duration | 81.573 seconds | `evidence/test-summary.json` | This is the only aggregate timing recorded in the repository. It is not used as a discovery/replay speed comparison. |
+| Pytest suite | 73 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.14.0 and Playwright Chromium. |
+| Test duration | 135.699 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
 | Genuine-provider test | Not part of suite | `evidence/test-summary.json`; `evidence/live-discovery/77525c9151e2/events.jsonl` | The test suite uses a fake provider; the separate live run records genuine provider discovery. |
 
 ## Evidence handling and unavailable metrics
