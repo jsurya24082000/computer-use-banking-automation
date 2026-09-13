@@ -78,6 +78,23 @@ async def discover(
                                             "a different visible action",
                                             "repeated fill whose value already matches input",
                                         )
+                                candidate_fingerprint = json.dumps(
+                                    {
+                                        "action": action.model_dump(),
+                                        "screen": observation["screen"],
+                                        "checks": observation["checks"],
+                                    },
+                                    sort_keys=True,
+                                )
+                                if (
+                                    action.kind == "extract"
+                                    and seen.get(candidate_fingerprint, 0) > 0
+                                ):
+                                    raise AutomationError(
+                                        "INVALID_MODEL_RESPONSE",
+                                        "a different visible action",
+                                        "repeated extract without a state change",
+                                    )
                                 break
                             except AutomationError as exc:
                                 if (
@@ -88,7 +105,8 @@ async def discover(
                                 observation["retry_feedback"] = (
                                     "The previous action was rejected. Choose a different "
                                     "visible action; do not repeat a fill whose value already "
-                                    "matches its input binding."
+                                    "matches its input binding or repeat extract without a "
+                                    "state change."
                                 )
                                 evidence.event(
                                     "model_response_rejected",
