@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 import uuid
+from types import SimpleNamespace
 import pytest
 from automation.evidence import Evidence
-from automation.models import Action, AutomationError, Ownership
+from automation.models import Action, AutomationError, Ownership, RuntimeConfig, Tenant
 from automation.policy import Policy
 from automation.surface import BrowserSurface, role_target, label_target
 from .artifacts import executor_artifact
@@ -184,6 +185,107 @@ async def test_missing_frame_fails_without_fallback(bank, inputs):
         await surface.page.locator("iframe").evaluate("e=>e.remove()")
         with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
             await surface.frame()
+
+
+@pytest.mark.asyncio
+async def test_attached_frame_falls_back_when_content_frame_temporarily_unavailable():
+    class Handle:
+        async def content_frame(self):
+            return None
+
+    class Locator:
+        async def wait_for(self, **kwargs):
+            return None
+
+        async def count(self):
+            return 1
+
+        async def element_handle(self):
+            return Handle()
+
+    expected = SimpleNamespace(name="bank-content")
+
+    class Page:
+        frames = []
+
+        def locator(self, selector):
+            return Locator()
+
+        async def wait_for_event(self, event, predicate, timeout):
+            assert event == "frameattached"
+            assert predicate(expected)
+            self.frames = [expected]
+            return expected
+
+    surface = BrowserSurface(
+        Tenant(),
+        None,
+        RuntimeConfig(action_timeout_ms=100),
+        None,
+        None,
+    )
+    surface.page = Page()
+    assert await surface.frame() is expected
+
+
+@pytest.mark.asyncio
+async def test_duplicate_matching_frames_fail_closed():
+    class Locator:
+        async def wait_for(self, **kwargs):
+            return None
+
+        async def count(self):
+            return 1
+
+        async def element_handle(self):
+            return None
+
+    class Page:
+        frames = [
+            SimpleNamespace(name="bank-content"),
+            SimpleNamespace(name="bank-content"),
+        ]
+
+        def locator(self, selector):
+            return Locator()
+
+    surface = BrowserSurface(
+        Tenant(), None, RuntimeConfig(action_timeout_ms=100), None, None
+    )
+    surface.page = Page()
+    with pytest.raises(AutomationError, match="AMBIGUOUS_FRAME"):
+        await surface.frame()
+
+
+@pytest.mark.asyncio
+async def test_frame_registration_timeout_is_bounded():
+    from playwright.async_api import TimeoutError as PlaywrightTimeout
+
+    class Locator:
+        async def wait_for(self, **kwargs):
+            return None
+
+        async def count(self):
+            return 1
+
+        async def element_handle(self):
+            return None
+
+    class Page:
+        frames = []
+
+        def locator(self, selector):
+            return Locator()
+
+        async def wait_for_event(self, event, predicate, timeout):
+            raise PlaywrightTimeout("timed out")
+
+    surface = BrowserSurface(
+        Tenant(), None, RuntimeConfig(action_timeout_ms=100), None, None
+    )
+    surface.page = Page()
+    with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
+        await surface.frame()
 
 
 @pytest.mark.browser

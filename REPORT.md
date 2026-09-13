@@ -6,7 +6,7 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 73 passing tests with no failures, errors, or
+The latest local verification records 78 passing tests with no failures, errors, or
 skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
 and command timings are in `evidence/repeatability-final.json`.
 
@@ -26,7 +26,7 @@ Dynamic values are `input_ref` bindings. A search-result row binds its Member ID
 
 ## 3. Determinism & error handling
 
-Replay imports no provider. It validates inputs/artifact, resolves declared exact locators in order, requires one visible match, and verifies postconditions. A duplicate match stops immediately; it never falls through to an arbitrary first element. Table headers identify columns, row constraints select the intended record, and only then is the repeated View link resolved. The adapter waits for classified server-rendered navigation to finish, avoiding checks against an old iframe document.
+Replay is deterministic only for a fixed artifact, tenant, policy, browser surface, and application state; it is not a claim that model discovery or external systems are deterministic. Replay imports no provider. It validates inputs/artifact, resolves declared exact locators in order, requires one visible match, and verifies postconditions. A duplicate match stops immediately; it never falls through to an arbitrary first element. Table headers identify columns, row constraints select the intended record, and only then is the repeated View link resolved. The adapter waits for classified server-rendered navigation to finish, avoiding checks against an old iframe document.
 
 Completion independently verifies member, product, active status, currency, all monetary fields and a timezone-aware timestamp. Decimal strings are parsed with Decimal; available balance must equal current balance minus active holds, an explicit demo assumption. The LLM saying “finish” is insufficient.
 
@@ -55,5 +55,12 @@ No arbitrary model code is executed. Structured observations contain public labe
 ## 7. Cuts
 
 Implemented depth centers on one read-only capability. No transfers, account changes, desktop adapter, general web crawler, tenant-override service, persistent browser restoration, remote co-browsing UI, or model-based replay recovery is included. Name search/pagination is available to staff; automation demonstrates exact-ID and product selection. The recorded live run demonstrates validated OpenAI-compatible discovery, deterministic replay, and same-browser human handoff/resume; provider token, cost, and API-latency metrics are not recorded.
+
+`BrowserSurface.frame()` has a genuine registration-race branch: an attached iframe
+can temporarily return no `content_frame()` before Playwright registers its named
+frame. The focused regression test forces that condition and verifies the bounded
+`frameattached` fallback. Duplicate matching frames and registration timeout are
+defensive fail-closed branches, covered by focused tests without fallback to an
+arbitrary frame.
 
 The original assignment PDF was read. The checked-in evidence now includes genuine discovery, replay of its artifact with a different invocation, and a real human takeover/resume; simulated-provider runs remain separately labeled under `evidence/offline/`. The live handoff evidence records event categories and ownership transitions but no screenshots or raw browser trace. Before submission, review the sanitized evidence and publish only after explicit authorization. A production successor would add organizational authentication, approved artifact signing/review, richer vendor adapters and operational controls rather than unnecessary distributed infrastructure.

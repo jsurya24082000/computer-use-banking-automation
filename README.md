@@ -104,6 +104,20 @@ Synthetic expected results:
 
 The latest local repeatability sample ran the genuine artifact ten times with model access disabled, alternating the two documented normal members. All ten succeeded with in-memory output verification; see `evidence/repeatability-final.json` for run IDs and elapsed times.
 
+To repeat that measured sample without calling a model, start the bank in `normal`
+scenario and run:
+
+```bash
+python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json
+```
+
+The command resets the synthetic bank with the existing seed command, requires the
+genuine `llm_discovery` artifact, alternates members `10001` and `10002`, verifies
+seeded outputs only in memory, blocks provider imports, writes aggregate metadata
+only, and preserves failures in the summary rather than replacing them. Use
+`--members 10001,10002 --product 'Primary Savings'` to state the defaults
+explicitly.
+
 ## Offline executor and compiler demonstration
 
 No model credentials are needed:
@@ -185,7 +199,7 @@ python tools/verify.py
 python -m ruff check automation banking_app tests tools --select F
 ```
 
-Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 73 passing tests with no failures, errors, or skips.
+Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 78 passing tests with no failures, errors, or skips.
 
 ## Layout and configuration
 

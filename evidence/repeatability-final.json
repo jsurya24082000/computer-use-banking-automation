@@ -5,99 +5,89 @@
     {
       "iteration": 1,
       "member_slot": "A",
-      "run_id": "b190121f738c",
+      "run_id": "c046bd6098fb",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 5.008,
+      "elapsed_seconds": 5.144,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 2,
       "member_slot": "B",
-      "run_id": "e6060ed3cf59",
+      "run_id": "b9ab345117a6",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 3.841,
+      "elapsed_seconds": 4.056,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 3,
       "member_slot": "A",
-      "run_id": "34760e6e4819",
+      "run_id": "1f996b0d8c0b",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.714,
+      "elapsed_seconds": 3.945,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 4,
       "member_slot": "B",
-      "run_id": "880e5422009c",
+      "run_id": "caee1eccd73b",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.281,
+      "elapsed_seconds": 4.035,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 5,
       "member_slot": "A",
-      "run_id": "90b40fcee554",
+      "run_id": "982a856876f3",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.822,
+      "elapsed_seconds": 4.057,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 6,
       "member_slot": "B",
-      "run_id": "c55ce4c6d977",
+      "run_id": "d0902cb56ffa",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.184,
+      "elapsed_seconds": 3.894,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 7,
       "member_slot": "A",
-      "run_id": "ac71a33be3ec",
+      "run_id": "c5d5ed98a66d",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.369,
+      "elapsed_seconds": 4.235,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 8,
       "member_slot": "B",
-      "run_id": "0eba407c84f3",
+      "run_id": "fdc6b120c45f",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.391,
+      "elapsed_seconds": 3.875,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 9,
       "member_slot": "A",
-      "run_id": "466184add644",
+      "run_id": "804d67dd7c04",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.538,
+      "elapsed_seconds": 4.039,
       "outputs_verified_in_memory": true
     },
     {
       "iteration": 10,
       "member_slot": "B",
-      "run_id": "2fc674da146e",
+      "run_id": "2936dd6a2abb",
       "status": "success",
-      "code": "SUCCESS",
-      "elapsed_seconds": 4.373,
+      "elapsed_seconds": 3.996,
       "outputs_verified_in_memory": true
     }
   ],
   "success_count": 10,
   "failure_count": 0,
   "elapsed_seconds": {
-    "min": 3.841,
-    "max": 5.008,
-    "median": 4.382
+    "min": 3.875,
+    "max": 5.144,
+    "median": 4.037
   }
 }
