@@ -1,0 +1,7 @@
+{
+  "version": "read-only-v1",
+  "allowed_origins": ["http://127.0.0.1:8000"],
+  "allowed_get_routes": ["/", "/static/style\\.css", "/ui/sign-in", "/ui/search", "/ui/members/[0-9]{5}", "/ui/accounts/[0-9]+"],
+  "allowed_post_routes": ["/ui/sign-in"],
+  "allowed_actions": ["navigate", "click", "fill", "select", "extract", "check", "finish"]
+}

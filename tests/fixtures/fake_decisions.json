@@ -1,0 +1,11 @@
+[
+  {"action":"fill","description":"Editable field: Staff username; value omitted","input_ref":"staff_username"},
+  {"action":"fill","description":"Editable field: Password; value omitted","input_ref":"staff_password"},
+  {"action":"click","description":"Sign in"},
+  {"action":"fill","description":"Editable field: Member ID; value omitted","input_ref":"member_id"},
+  {"action":"click","description":"Search"},
+  {"action":"click","description":"View search result whose Member ID equals input_ref member_id"},
+  {"action":"click","description":"View account whose Product equals input_ref product_name and Status is Active"},
+  {"action":"extract"},
+  {"action":"finish"}
+]

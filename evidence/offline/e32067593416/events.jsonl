@@ -1,0 +1,2 @@
+{"at": "2026-09-13T07:01:33.358091+00:00", "event": "run_started", "run_id": "e32067593416", "provenance": "simulated_discovery", "provider": "fake-scripted-offline"}
+{"at": "2026-09-13T07:01:33.729974+00:00", "event": "run_finished", "run_id": "e32067593416", "status": "failure", "code": "UNEXPECTED_RUNTIME_ERROR", "step_id": "s000"}

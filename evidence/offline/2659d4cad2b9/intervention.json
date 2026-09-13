@@ -1,0 +1,16 @@
+{
+  "run_id": "2659d4cad2b9",
+  "capability": "read_account_balances",
+  "step_id": "s007",
+  "reason": "SESSION_EXPIRED",
+  "context": {
+    "screen": "sign_in",
+    "signal": "session_expired",
+    "control_count": 0,
+    "matching_member": false,
+    "matching_product": false,
+    "active": false,
+    "balance_fields_present": false
+  },
+  "operator": "Claim this run in its terminal; use the existing visible browser; resume after account verification."
+}

@@ -1,0 +1,47 @@
+{
+  "recorded_at": "2026-09-13T07:02:52.589609+00:00",
+  "synthetic_data_only": true,
+  "provider_evidence": "SIMULATED; no genuine LLM discovery recorded",
+  "runs": [
+    {
+      "label": "simulated_discovery_real_browser",
+      "run_id": "5156ceafab4e",
+      "status": "success",
+      "code": "SUCCESS",
+      "events": "offline/5156ceafab4e/events.jsonl"
+    },
+    {
+      "label": "parameterized_replay_different_member_no_model",
+      "run_id": "03f645c07c91",
+      "status": "success",
+      "code": "SUCCESS",
+      "events": "offline/03f645c07c91/events.jsonl"
+    },
+    {
+      "label": "business_outcome",
+      "run_id": "63695471525e",
+      "status": "business_outcome",
+      "code": "MEMBER_NOT_FOUND",
+      "events": "offline/63695471525e/events.jsonl"
+    },
+    {
+      "label": "recoverable_read_failure",
+      "run_id": "225308a6b01c",
+      "status": "success",
+      "code": "SUCCESS",
+      "events": "offline/225308a6b01c/events.jsonl"
+    },
+    {
+      "label": "intervention_request_only_no_human",
+      "run_id": "2659d4cad2b9",
+      "status": "intervention_required",
+      "code": "OPERATOR_UNAVAILABLE",
+      "events": "offline/2659d4cad2b9/events.jsonl"
+    }
+  ],
+  "incomplete": [
+    "Genuine model-driven discovery and its artifact",
+    "Replay of a genuinely discovered artifact",
+    "Real human takeover and resume"
+  ]
+}

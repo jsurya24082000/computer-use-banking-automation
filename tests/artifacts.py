@@ -1,0 +1,69 @@
+"""HAND-AUTHORED EXECUTOR TEST ONLY. Never evidence of LLM discovery."""
+
+from automation.evidence import utcnow
+from automation.models import (
+    Action,
+    Binding,
+    Capability,
+    CellMatch,
+    Checkpoint,
+    Provenance,
+    Step,
+    FINAL,
+)
+from automation.surface import label_target, role_target
+
+
+def executor_artifact():
+    actions = [
+        Action(
+            kind="fill",
+            target=label_target("Staff username"),
+            input_ref="staff_username",
+        ),
+        Action(
+            kind="fill", target=label_target("Password"), input_ref="staff_password"
+        ),
+        Action(kind="click", target=role_target("Sign in")),
+        Action(kind="fill", target=label_target("Member ID"), input_ref="member_id"),
+        Action(kind="click", target=role_target("Search")),
+        Action(
+            kind="click",
+            target=role_target(
+                "View",
+                "link",
+                "Member search results",
+                [CellMatch(column="Member ID", value=Binding(input_ref="member_id"))],
+            ),
+        ),
+        Action(
+            kind="click",
+            target=role_target(
+                "View",
+                "link",
+                "Member accounts",
+                [
+                    CellMatch(
+                        column="Product", value=Binding(input_ref="product_name")
+                    ),
+                    CellMatch(column="Status", value=Binding(literal="Active")),
+                ],
+            ),
+        ),
+        Action(kind="extract"),
+        Action(kind="finish"),
+    ]
+    steps = [Step(id=f"s{i:03}", action=a) for i, a in enumerate(actions, 1)]
+    steps[2].after = Checkpoint(screen="member_search")
+    steps[4].after = Checkpoint(screen="search_results")
+    steps[5].after = Checkpoint(screen="member_overview", verify_member=True)
+    steps[6].after = FINAL.model_copy()
+    return Capability(
+        steps=steps,
+        provenance=Provenance(
+            kind="hand_authored_executor_test",
+            run_id="000000000000",
+            provider="none",
+            created_at=utcnow(),
+        ),
+    )
