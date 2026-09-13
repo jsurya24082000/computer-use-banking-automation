@@ -85,6 +85,11 @@ async def discover(
                                     or attempt == config.invalid_response_retries
                                 ):
                                     raise
+                                observation["retry_feedback"] = (
+                                    "The previous action was rejected. Choose a different "
+                                    "visible action; do not repeat a fill whose value already "
+                                    "matches its input binding."
+                                )
                                 evidence.event(
                                     "model_response_rejected",
                                     code=exc.code,
