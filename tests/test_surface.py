@@ -180,8 +180,8 @@ async def test_delayed_frame_registration_is_bounded_and_event_driven(bank, inpu
 
 @pytest.mark.browser
 async def test_missing_frame_fails_without_fallback(bank, inputs):
-    bank["config"].action_timeout_ms = 100
     async with live(bank, inputs) as (surface, evidence):
+        bank["config"].action_timeout_ms = 100
         await surface.page.locator("iframe").evaluate("e=>e.remove()")
         with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
             await surface.frame()
