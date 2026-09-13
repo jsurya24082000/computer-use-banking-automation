@@ -63,6 +63,21 @@ async def discover(
                                     evidence.sanitizer.text(goal), observation
                                 )
                                 action = compile_action(decision, surface.controls)
+                                if action.kind == "fill":
+                                    control = next(
+                                        (
+                                            item
+                                            for item in observation["controls"]
+                                            if item["control_ref"] == decision.control_ref
+                                        ),
+                                        None,
+                                    )
+                                    if control and control.get("value_matches_input"):
+                                        raise AutomationError(
+                                            "INVALID_MODEL_RESPONSE",
+                                            "a different visible action",
+                                            "repeated fill whose value already matches input",
+                                        )
                                 break
                             except AutomationError as exc:
                                 if (
