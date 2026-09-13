@@ -1,18 +1,24 @@
+from pathlib import Path
 import pytest
 from automation.runner import replay
+from automation.evidence import capability_sha256
 from banking_app.app import set_scenario
 from .artifacts import executor_artifact
 
 
 @pytest.mark.browser
 async def test_hand_authored_executor_primary(bank, inputs):
-    result = await replay(
-        executor_artifact(), inputs, bank["tenant"], bank["config"], bank["policy"]
-    )
+    artifact = executor_artifact()
+    result = await replay(artifact, inputs, bank["tenant"], bank["config"], bank["policy"])
     assert result.status == "success", result
     assert result.outputs.current_balance == "4250.75"
     assert result.outputs.available_balance == "4000.75"
     assert result.outputs.active_holds == "250.00"
+    events = (
+        Path(bank["config"].evidence_dir) / result.run_id / "events.jsonl"
+    ).read_text()
+    assert f'"event": "replay_started"' in events
+    assert f'"capability_sha256": "{capability_sha256(artifact)}"' in events
 
 
 @pytest.mark.browser

@@ -47,8 +47,8 @@ does not include model token or cost data.
 
 | Check | Recorded result | Evidence | Notes |
 |---|---:|---|---|
-| Pytest suite | 73 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.14.0 and Playwright Chromium. |
-| Test duration | 135.699 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
+| Pytest suite | 75 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.14.0 and Playwright Chromium. |
+| Test duration | 134.689 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
 | Genuine-provider test | Not part of suite | `evidence/test-summary.json`; `evidence/live-discovery/77525c9151e2/events.jsonl` | The test suite uses a fake provider; the separate live run records genuine provider discovery. |
 
 ## Evidence handling and unavailable metrics
@@ -61,3 +61,23 @@ does not include model token or cost data.
 - Event-derived elapsed durations are recorded for the three live runs; human action
   duration is not isolated from browser/runtime time.
 - No new discovery or model call was performed for this documentation update.
+
+## Repeatability sample
+
+| Sample | Result | Evidence | Measured result |
+|---|---|---|---|
+| Ten alternating model-free replays of the genuine artifact | 10 success, 0 failure | `evidence/repeatability-final.json`; `evidence/repeatability-final/` | Slots A/B alternate the two documented normal members; outputs were verified in memory and are not written here. Command elapsed time: min 3.841s, median 4.382s, max 5.008s. |
+
+This is a local ten-run sample, not a production benchmark. No model access was
+used, and no financial output values are persisted in the repeatability evidence.
+
+## Traceability and CI
+
+New replay runs emit `replay_started` with the SHA-256 of the validated capability's
+canonical JSON (`model_dump(mode="json")`, recursively sorted keys, compact JSON
+separators, UTF-8 encoded, SHA-256). The hash covers the full capability and no
+invocation values, credentials, or financial outputs; historical event logs were
+not rewritten. The CI workflow is `.github/workflows/verify.yml` and runs pinned
+dependencies, Chromium, pytest, and Ruff on Ubuntu and Windows without model
+credentials. No hosted CI result is claimed here because it was not run in this
+audit.

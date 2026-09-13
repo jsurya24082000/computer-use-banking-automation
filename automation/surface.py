@@ -234,16 +234,45 @@ class BrowserSurface:
         if scope == "shell":
             return self.page
         iframe = self.page.locator(f'iframe[name="{self.tenant.frame_name}"]')
-        await iframe.wait_for(state="attached")
-        frame = None
-        for _ in range(50):
-            frame = self.page.frame(name=self.tenant.frame_name)
-            if frame:
-                break
-            await self.page.wait_for_timeout(10)
-        if not frame:
+        try:
+            await iframe.wait_for(
+                state="attached", timeout=self.config.action_timeout_ms
+            )
+        except PlaywrightTimeout:
             raise AutomationError("FRAME_NOT_FOUND")
-        return frame
+        if await iframe.count() != 1:
+            raise AutomationError("AMBIGUOUS_FRAME")
+        handle = await iframe.element_handle()
+        frame = await handle.content_frame() if handle else None
+        if frame:
+            return frame
+        named = [
+            frame
+            for frame in self.page.frames
+            if frame.name == self.tenant.frame_name
+        ]
+        if len(named) > 1:
+            raise AutomationError("AMBIGUOUS_FRAME")
+        if named:
+            return named[0]
+        try:
+            await self.page.wait_for_event(
+                "frameattached",
+                predicate=lambda frame: frame.name == self.tenant.frame_name,
+                timeout=self.config.action_timeout_ms,
+            )
+        except PlaywrightTimeout:
+            raise AutomationError("FRAME_NOT_FOUND")
+        named = [
+            frame
+            for frame in self.page.frames
+            if frame.name == self.tenant.frame_name
+        ]
+        if len(named) != 1:
+            raise AutomationError(
+                "AMBIGUOUS_FRAME" if named else "FRAME_NOT_FOUND"
+            )
+        return named[0]
 
     async def settle(self):
         frame = await self.frame()

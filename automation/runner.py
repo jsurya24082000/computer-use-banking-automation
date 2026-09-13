@@ -4,7 +4,7 @@ import asyncio
 import re
 import uuid
 
-from .evidence import Evidence
+from .evidence import Evidence, capability_sha256
 from .models import (
     Action,
     AutomationError,
@@ -191,6 +191,11 @@ async def replay(
     run_id = uuid.uuid4().hex[:12]
     evidence = Evidence(config.evidence_dir, run_id, inputs)
     evidence.event("run_started", provenance="deterministic_replay")
+    evidence.event(
+        "replay_started",
+        provenance="deterministic_replay",
+        capability_sha256=capability_sha256(capability),
+    )
     if not re.fullmatch(r"[0-9]{5}", inputs.member_id):
         evidence.event("run_finished", status="business_outcome", code="INVALID_INPUT")
         return Result(status="business_outcome", code="INVALID_INPUT", run_id=run_id)

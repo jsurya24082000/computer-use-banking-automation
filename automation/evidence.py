@@ -1,6 +1,7 @@
 """Allowlisted diagnostic records, never raw UI/model payloads or returned outputs."""
 
 import json
+import hashlib
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,6 +10,16 @@ from .models import Inputs
 
 def utcnow():
     return datetime.now(timezone.utc).isoformat()
+
+
+def capability_sha256(capability) -> str:
+    """Hash the validated capability's canonical JSON, excluding no capability fields."""
+    canonical = json.dumps(
+        capability.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 class Sanitizer:
@@ -88,6 +99,7 @@ class Evidence:
             "checkpoint",
             "evidence_ref",
             "status",
+            "capability_sha256",
         }
         if set(fields) - allowed:
             raise ValueError("Diagnostic field not allowlisted")

@@ -1,3 +1,15 @@
+# Computer-Use Banking Automation — reviewer report
+
+**Reviewer entry point:** start with `README.md`, then
+`evidence/RUN_SUMMARY.md`, `evidence/manifest.json`, and the cited live/offline
+event folders. Live records cover genuine-provider discovery, deterministic replay,
+and same-browser handoff/resume; offline records are explicitly simulated or
+hand-authored.
+
+The latest local verification records 73 passing tests with no failures, errors, or
+skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
+and command timings are in `evidence/repeatability-final.json`.
+
 ## 1. Architecture
 
 The target is a separate FastAPI application with Jinja screens and SQLite; the automation is one Python process using asynchronous Playwright. There are no queues, agents-as-services, or orchestration frameworks. The app provides an intentionally modest legacy surface: an iframe, server-rendered forms, dense account tables, and repeated “View” links. Labels and table relationships remain usable to staff and automation alike.

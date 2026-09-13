@@ -162,6 +162,31 @@ async def test_ui_version_drift_stops(bank, inputs):
 
 
 @pytest.mark.browser
+async def test_delayed_frame_registration_is_bounded_and_event_driven(bank, inputs):
+    async with live(bank, inputs) as (surface, evidence):
+        await surface.page.locator("iframe").evaluate("e=>e.remove()")
+        await surface.page.evaluate(
+            """() => setTimeout(() => {
+                const iframe = document.createElement('iframe');
+                iframe.name = 'bank-content';
+                iframe.src = '/ui/sign-in';
+                document.body.appendChild(iframe);
+            }, 100)"""
+        )
+        frame = await surface.frame()
+        assert frame.name == "bank-content"
+
+
+@pytest.mark.browser
+async def test_missing_frame_fails_without_fallback(bank, inputs):
+    bank["config"].action_timeout_ms = 100
+    async with live(bank, inputs) as (surface, evidence):
+        await surface.page.locator("iframe").evaluate("e=>e.remove()")
+        with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
+            await surface.frame()
+
+
+@pytest.mark.browser
 async def test_redirect_to_outside_origin_is_intercepted(bank, inputs):
     async with live(bank, inputs) as (surface, evidence):
         # Harness installs one synthetic redirect; all subsequent requests still

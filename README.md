@@ -16,6 +16,8 @@ The genuine discovery, deterministic replay, and human takeover/resume records a
 
 See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), and [evidence/test-summary.json](evidence/test-summary.json) for what actually ran. [REPORT.md](REPORT.md) explains the design and limits.
 
+**Reviewer entry point:** start with [REPORT.md](REPORT.md), then [evidence/RUN_SUMMARY.md](evidence/RUN_SUMMARY.md), [evidence/manifest.json](evidence/manifest.json), and the cited sanitized event folders. Live records are distinct from simulated runs under `evidence/offline/`.
+
 ## Install
 
 Python 3.11+; tested with Python 3.12. Use an ordinary desktop session for human takeover.
@@ -100,6 +102,8 @@ Synthetic expected results:
 
 **Demo assumption:** available balance = current balance minus active holds. SQLite stores integer cents. Decimal parsing and decimal strings are used at the output boundary. No binary floating-point arithmetic is used for money. The displayed “As of” is the fixed synthetic ledger snapshot timestamp, not the time of the automation run.
 
+The latest local repeatability sample ran the genuine artifact ten times with model access disabled, alternating the two documented normal members. All ten succeeded with in-memory output verification; see `evidence/repeatability-final.json` for run IDs and elapsed times.
+
 ## Offline executor and compiler demonstration
 
 No model credentials are needed:
@@ -123,6 +127,8 @@ python tools/collect_offline_evidence.py
 ```
 
 This developer harness changes scenario configuration between runs. The automation packages never read that configuration or the banking database. Only the app and independent test harness do.
+
+Replay events from new runs include a SHA-256 of the canonical validated capability; credentials, invocation values, and financial outputs are excluded from diagnostics. Historical evidence is preserved without rewriting.
 
 ## Runtime scenarios
 

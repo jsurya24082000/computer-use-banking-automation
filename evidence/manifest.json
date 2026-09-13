@@ -33,6 +33,14 @@
       "intervention": "live-handoff/35587b0655e5/intervention.json"
     },
     {
+      "label": "repeatability_sample_ten_model_free_replays",
+      "status": "success",
+      "success_count": 10,
+      "failure_count": 0,
+      "summary": "repeatability-final.json",
+      "runs": "repeatability-final/"
+    },
+    {
       "label": "simulated_discovery_real_browser",
       "run_id": "5156ceafab4e",
       "status": "success",
