@@ -62,6 +62,35 @@ async def test_invalid_model_response_is_bounded(bank, inputs):
 
 
 @pytest.mark.browser
+async def test_redundant_fill_retries_with_feedback(bank, inputs):
+    provider = FakeProvider(
+        [
+            {
+                "action": "fill",
+                "description": "Editable field: Staff username; value omitted",
+                "input_ref": "staff_username",
+            },
+            {
+                "action": "fill",
+                "description": "Editable field: Staff username; value omitted",
+                "input_ref": "staff_username",
+            },
+            {
+                "action": "fill",
+                "description": "Editable field: Password; value omitted",
+                "input_ref": "staff_password",
+            },
+            *json.loads(Path("tests/fixtures/fake_decisions.json").read_text())[2:],
+        ]
+    )
+    result, artifact = await discover(
+        "test", inputs, provider, bank["tenant"], bank["config"], bank["policy"]
+    )
+    assert result.status == "success", result
+    assert artifact is not None
+
+
+@pytest.mark.browser
 async def test_model_finish_is_not_success(bank, inputs):
     result, artifact = await discover(
         "test",
