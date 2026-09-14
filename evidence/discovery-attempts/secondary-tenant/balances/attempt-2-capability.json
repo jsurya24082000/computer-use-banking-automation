@@ -1,0 +1,454 @@
+{
+  "schema_version": "1.0",
+  "name": "read_account_balances",
+  "version": "1.0.0",
+  "description": "Read balances for an active account after verifying member and product.",
+  "compatibility": {
+    "product": "demo-credit-union-staff-console",
+    "ui_version": "1.0",
+    "adapter": "playwright-dom-v1"
+  },
+  "inputs": [
+    {
+      "name": "member_id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "product_name",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "staff_username",
+      "type": "secret",
+      "required": true
+    },
+    {
+      "name": "staff_password",
+      "type": "secret",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "product_name",
+      "type": "string"
+    },
+    {
+      "name": "account_status",
+      "type": "string"
+    },
+    {
+      "name": "currency",
+      "type": "string"
+    },
+    {
+      "name": "current_balance",
+      "type": "decimal"
+    },
+    {
+      "name": "available_balance",
+      "type": "decimal"
+    },
+    {
+      "name": "active_holds",
+      "type": "decimal"
+    },
+    {
+      "name": "as_of",
+      "type": "timestamp"
+    }
+  ],
+  "preconditions": [
+    {
+      "screen": "sign_in",
+      "verify_member": false,
+      "verify_product": false,
+      "require_active": false,
+      "require_balances": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "s001",
+      "action": {
+        "kind": "fill",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "label",
+              "name": {
+                "literal": "Staff username",
+                "input_ref": null
+              },
+              "role": null
+            }
+          ],
+          "table": null,
+          "row": []
+        },
+        "input_ref": "staff_username",
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "sign_in",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "sign_in",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s002",
+      "action": {
+        "kind": "fill",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "label",
+              "name": {
+                "literal": "Password",
+                "input_ref": null
+              },
+              "role": null
+            }
+          ],
+          "table": null,
+          "row": []
+        },
+        "input_ref": "staff_password",
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "sign_in",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "sign_in",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s003",
+      "action": {
+        "kind": "click",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "role",
+              "name": {
+                "literal": "Sign in",
+                "input_ref": null
+              },
+              "role": "button"
+            }
+          ],
+          "table": null,
+          "row": []
+        },
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "sign_in",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "member_search",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s004",
+      "action": {
+        "kind": "fill",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "label",
+              "name": {
+                "literal": "Member ID",
+                "input_ref": null
+              },
+              "role": null
+            }
+          ],
+          "table": null,
+          "row": []
+        },
+        "input_ref": "member_id",
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "member_search",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "member_search",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s005",
+      "action": {
+        "kind": "click",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "role",
+              "name": {
+                "literal": "Search",
+                "input_ref": null
+              },
+              "role": "button"
+            }
+          ],
+          "table": null,
+          "row": []
+        },
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "member_search",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "search_results",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s006",
+      "action": {
+        "kind": "click",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "role",
+              "name": {
+                "literal": "View",
+                "input_ref": null
+              },
+              "role": "link"
+            }
+          ],
+          "table": "Member search results",
+          "row": [
+            {
+              "column": "Member ID",
+              "value": {
+                "literal": null,
+                "input_ref": "member_id"
+              }
+            }
+          ]
+        },
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "search_results",
+        "verify_member": false,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "member_overview",
+        "verify_member": true,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      }
+    },
+    {
+      "id": "s007",
+      "action": {
+        "kind": "click",
+        "target": {
+          "frame": "content",
+          "strategies": [
+            {
+              "kind": "role",
+              "name": {
+                "literal": "View",
+                "input_ref": null
+              },
+              "role": "link"
+            }
+          ],
+          "table": "Member accounts",
+          "row": [
+            {
+              "column": "Product",
+              "value": {
+                "literal": null,
+                "input_ref": "product_name"
+              }
+            },
+            {
+              "column": "Status",
+              "value": {
+                "literal": "Active",
+                "input_ref": null
+              }
+            }
+          ]
+        },
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "member_overview",
+        "verify_member": true,
+        "verify_product": false,
+        "require_active": false,
+        "require_balances": false
+      },
+      "after": {
+        "screen": "account_details",
+        "verify_member": true,
+        "verify_product": true,
+        "require_active": true,
+        "require_balances": true
+      }
+    },
+    {
+      "id": "s008",
+      "action": {
+        "kind": "extract",
+        "target": null,
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "account_details",
+        "verify_member": true,
+        "verify_product": true,
+        "require_active": true,
+        "require_balances": true
+      },
+      "after": {
+        "screen": "account_details",
+        "verify_member": true,
+        "verify_product": true,
+        "require_active": true,
+        "require_balances": true
+      }
+    },
+    {
+      "id": "s009",
+      "action": {
+        "kind": "finish",
+        "target": null,
+        "input_ref": null,
+        "checkpoint": null,
+        "destination": null
+      },
+      "before": {
+        "screen": "account_details",
+        "verify_member": true,
+        "verify_product": true,
+        "require_active": true,
+        "require_balances": true
+      },
+      "after": {
+        "screen": "account_details",
+        "verify_member": true,
+        "verify_product": true,
+        "require_active": true,
+        "require_balances": true
+      }
+    }
+  ],
+  "final_checkpoint": {
+    "screen": "account_details",
+    "verify_member": true,
+    "verify_product": true,
+    "require_active": true,
+    "require_balances": true
+  },
+  "business_outcomes": [
+    {
+      "code": "INVALID_INPUT",
+      "signal": "invalid_input"
+    },
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "signal": "member_not_found"
+    },
+    {
+      "code": "NO_ELIGIBLE_ACCOUNT",
+      "signal": "no_eligible_account"
+    }
+  ],
+  "recovery": [
+    {
+      "signal": "temporary_failure",
+      "action": "retry_visible_read_link",
+      "max_attempts": 1
+    }
+  ],
+  "policy_requirements": "read-only-v1",
+  "resume_checkpoint": {
+    "screen": "account_details",
+    "verify_member": true,
+    "verify_product": true,
+    "require_active": true,
+    "require_balances": true
+  },
+  "provenance": {
+    "kind": "llm_discovery",
+    "run_id": "94ae8ea6415b",
+    "provider": "openai-compatible/gpt-4o",
+    "created_at": "2026-09-14T14:13:55.241692+00:00"
+  },
+  "lifecycle": "approved"
+}

@@ -86,3 +86,33 @@ and resume checks. Two controlled tenant bindings are implemented
 separate approval per tenant, and tenant, policy, or compatibility changes
 invalidate that approval. Tenant overrides cannot broaden the trusted
 read-only policy.
+
+## Latest owner-run validation
+
+The owner-run stages were performed from source revision `659d6f4` and are
+separate from the historical evidence above. Six genuine OpenAI discovery
+attempts were recorded in `evidence/discovery-attempts-balances.json` and
+`evidence/discovery-attempts-transactions.json`: four succeeded and two failed;
+the failed attempts remain represented in the aggregates and were not
+reclassified or rerun. Four successful capability artifacts were retained under
+`evidence/discovery-attempts/`.
+
+Each successful capability was approved for both `config/tenant.json` and
+`config/tenant-secondary.json`, producing eight approved sidecars. The balance
+capability hashes are `e2817b7d...7697c9a` and `8757db3b...e50b572`; the
+transaction capability hashes are `0604758c...a75ac2b` and
+`e98b2a3f...37ae2ab`. Approval records use distinct tenant digests, so this is
+capability reuse with separate tenant-bound approvals, not an unbound override.
+
+The four reports under `evidence/repeatability-matrix-*.json` contain 100
+model-free executions each (400 total), with zero unexpected mismatches. Each
+report records the expected/observed outcome categories and per-attempt
+verification. The current runner records min/median/max elapsed time, not
+first-attempt/recovery counts or p95; those metrics remain unavailable.
+
+The real handoff evidence is preserved in
+`evidence/live-handoff-stage6/246101e0d773/` and
+`evidence/live-handoff-stage6-retry/5c4f9a6d4fe9/`. The first ends with
+`INVALID_CREDENTIALS` and is not counted as a successful handoff. The retry
+records sanitized human interaction events, `automation -> paused -> human ->
+automation`, `resume_verified`, and final `SUCCESS`.

@@ -12,7 +12,7 @@ Implemented: the FastAPI/SQLite banking app, iframe surface, reproducible scenar
 
 The checked-in evidence demonstrates **real Chromium execution with a genuine LLM discovery**, replay of its artifact with different inputs, a business outcome, a recovered read failure, and a real human takeover/resume. Simulated-provider runs remain under `evidence/offline/` and are labeled separately. A hand-authored artifact is also included solely for executor testing.
 
-The genuine discovery, deterministic replay, and human takeover/resume records are preserved under `evidence/live-discovery/`, `evidence/live-replay/`, and `evidence/live-handoff/`. Provider token/cost metrics and raw browser traces are not recorded. Nothing has been emailed; publishing still requires explicit authorization.
+The historical genuine discovery, deterministic replay, and human takeover/resume records are preserved under `evidence/live-discovery/`, `evidence/live-replay/`, and `evidence/live-handoff/`. The latest owner-run validation is separately preserved under `evidence/discovery-attempts/`, `evidence/repeatability-matrix-*.json`, and `evidence/live-handoff-stage6*/`; it includes four successful and two failed genuine discovery attempts, eight tenant-bound approvals, 400 model-free matrix executions, and one failed plus one successful real handoff attempt. Provider token/cost metrics and raw browser traces are not recorded. Nothing has been emailed; publishing still requires explicit authorization.
 
 See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), and [evidence/test-summary.json](evidence/test-summary.json) for what actually ran. [REPORT.md](REPORT.md) explains the design and limits.
 

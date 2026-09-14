@@ -81,3 +81,36 @@ not rewritten. The CI workflow is `.github/workflows/verify.yml` and runs pinned
 dependencies, Chromium, pytest, and Ruff on Ubuntu and Windows without model
 credentials. No hosted CI result is claimed here because it was not run in this
 audit.
+
+## Latest owner-run stages
+
+These records were copied from the owner checkout and verified against source
+revision `659d6f4`; they are not replacements for historical evidence.
+
+| Stage | Result | Evidence |
+|---|---|---|
+| 2 — genuine discovery | 6 attempts: 4 success, 2 failure | `evidence/discovery-attempts-balances.json`; `evidence/discovery-attempts-transactions.json`; successful artifacts under `evidence/discovery-attempts/` |
+| 3 — qualification | 8 approved records across primary and secondary tenants | `evidence/discovery-attempts/**/*.approval.json`; `config/tenant.json`; `config/tenant-secondary.json` |
+| 4 — model-free repeatability | 400 attempts, 0 unexpected mismatches | `evidence/repeatability-matrix-primary-balances.json`; `evidence/repeatability-matrix-primary-transactions.json`; `evidence/repeatability-matrix-secondary-balances.json`; `evidence/repeatability-matrix-secondary-transactions.json` |
+| 6 — real human handoff | 1 preserved `INVALID_CREDENTIALS` failure and 1 `SUCCESS` | `evidence/live-handoff-stage6/246101e0d773/events.jsonl`; `evidence/live-handoff-stage6-retry/5c4f9a6d4fe9/events.jsonl`; successful `intervention.json` |
+
+The successful Stage 6 event log verifies
+`automation -> paused -> human -> automation`, sanitized human interaction
+events, a rejected early resume, `resume_verified`, and final `SUCCESS`. The
+failed attempt ended before intervention and therefore has no intervention
+sidecar.
+
+The four approved capability hashes are recorded in their sidecars and reused
+across both tenants with distinct tenant digests:
+
+| Workflow artifact hash | Workflow |
+|---|---|
+| `e2817b7d...7697c9a`; `8757db3b...e50b572` | balances |
+| `0604758c...a75ac2b`; `e98b2a3f...37ae2ab` | transactions |
+
+The latest owner-run matrix reports include category counts and expected versus
+observed outcomes. The runner does not record first-attempt/recovery counts or
+p95 duration, so those metrics are unavailable. Remaining limitations are no
+provider token/cost metrics, no raw browser traces/screenshots, and no
+qualification approval for the two failed discovery attempts because no
+capability artifact was compiled.

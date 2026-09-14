@@ -22,3 +22,29 @@ An earlier failed app-connectivity attempt is retained in `offline/e32067593416/
 Run diagnostics omit invocation values and declared financial outputs. Failure evidence is a sanitized structured snapshot rather than raw HTML, traces or unmasked screenshots. Test XML and captured output are temporary and are not included. The expected balances in the README are explicitly published synthetic sample values, separate from diagnostics.
 
 To regenerate offline evidence, start the bank and run `python tools/collect_offline_evidence.py`. To measure ten model-free replays of the genuine artifact, start the bank in the normal scenario and run `python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json`; it resets the synthetic database, blocks provider imports, writes aggregate metadata only, and preserves failures. To regenerate verification counts, run `python tools/verify.py`. Review live run folders before public submission; provider token/cost/latency metrics are not recorded, and no screenshots or raw browser traces are retained. New replay runs include a canonical capability SHA-256 in `replay_started`; historical logs retain their original format.
+
+## Latest owner-run validation
+
+The latest owner-run evidence was collected from source revision `659d6f4`.
+Stage 2 contains six genuine OpenAI discovery attempts: two balance successes,
+two transaction successes, and one preserved failure in each workflow. The
+successful capability artifacts are under `discovery-attempts/`; the aggregate
+records are `discovery-attempts-balances.json` and
+`discovery-attempts-transactions.json`.
+
+Stage 3 contains eight approved sidecars: the four successful capabilities were
+qualified against both `config/tenant.json` and
+`config/tenant-secondary.json`. The same capability hashes are reused across
+tenants, while the tenant digests differ and bind each approval separately.
+
+Stage 4 contains four model-free reports, each with 100 recorded attempts and
+zero unexpected mismatches: primary/secondary tenant crossed with
+balances/transactions. The reports preserve category counts and per-attempt
+expected/observed status. They do not record first-attempt/recovery counts or
+p95 duration because the current runner does not measure those fields.
+
+Stage 6 preserves both actual-person handoff attempts. The failed run
+`246101e0d773` ends with `INVALID_CREDENTIALS` before intervention. The
+successful run `5c4f9a6d4fe9` records
+`automation -> paused -> human -> automation`, sanitized human interaction
+events, a rejected early resume, `resume_verified`, and final `SUCCESS`.

@@ -1,0 +1,8 @@
+{"at": "2026-09-14T15:11:19.500508+00:00", "event": "run_started", "run_id": "246101e0d773", "provenance": "deterministic_replay"}
+{"at": "2026-09-14T15:11:19.500508+00:00", "event": "replay_started", "run_id": "246101e0d773", "provenance": "deterministic_replay", "capability_sha256": "e2817b7d03b706843b1ecd70e98c0a501f42a3114242bdd5885ace92c7697c9a"}
+{"at": "2026-09-14T15:11:21.705733+00:00", "event": "action_started", "run_id": "246101e0d773", "step_id": "s001", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-14T15:11:21.949368+00:00", "event": "action_verified", "run_id": "246101e0d773", "step_id": "s001", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-14T15:11:22.029316+00:00", "event": "action_started", "run_id": "246101e0d773", "step_id": "s002", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-14T15:11:22.207918+00:00", "event": "action_verified", "run_id": "246101e0d773", "step_id": "s002", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-14T15:11:22.270798+00:00", "event": "action_started", "run_id": "246101e0d773", "step_id": "s003", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-14T15:11:22.699235+00:00", "event": "run_finished", "run_id": "246101e0d773", "status": "failure", "code": "INVALID_CREDENTIALS", "step_id": "s003"}

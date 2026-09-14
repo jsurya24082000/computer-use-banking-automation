@@ -74,10 +74,81 @@
       "status": "intervention_required",
       "code": "OPERATOR_UNAVAILABLE",
       "events": "offline/2659d4cad2b9/events.jsonl"
+    },
+    {
+      "label": "stage2_balance_discovery_attempts",
+      "status": "2_success_1_failure",
+      "provider": "openai",
+      "aggregate": "discovery-attempts-balances.json",
+      "successful_artifacts": [
+        "discovery-attempts/balances/attempt-2-capability.json",
+        "discovery-attempts/balances/attempt-3-capability.json"
+      ],
+      "failed_attempt_recorded_in": "discovery-attempts-balances.json",
+      "failed_artifact": null
+    },
+    {
+      "label": "stage2_transaction_discovery_attempts",
+      "status": "2_success_1_failure",
+      "provider": "openai",
+      "aggregate": "discovery-attempts-transactions.json",
+      "successful_artifacts": [
+        "discovery-attempts/transactions/attempt-2-capability.json",
+        "discovery-attempts/transactions/attempt-3-capability.json"
+      ],
+      "failed_attempt_recorded_in": "discovery-attempts-transactions.json",
+      "failed_artifact": null
+    },
+    {
+      "label": "stage3_qualification_approvals",
+      "status": "8_approved",
+      "tenants": {
+        "primary": "config/tenant.json",
+        "secondary": "config/tenant-secondary.json"
+      },
+      "approval_root": "discovery-attempts/",
+      "artifact_hashes": {
+        "balances": [
+          "e2817b7d03b706843b1ecd70e98c0a501f42a3114242bdd5885ace92c7697c9a",
+          "8757db3b5758270019ab55f8f9f1f49620cd19523fa07bc9d9a305f36e50b572"
+        ],
+        "transactions": [
+          "0604758ca3c0b4b517b4743b63138b776b46e04ae1e4c1083c8b2ea38a75ac2b",
+          "e98b2a3fd6e4439fc2e620293bf16bd3299ef7cbc5adecaeb9e7446b137ae2ab"
+        ]
+      }
+    },
+    {
+      "label": "stage4_repeatability_matrix",
+      "status": "400_attempts_0_mismatches",
+      "reports": [
+        "repeatability-matrix-primary-balances.json",
+        "repeatability-matrix-primary-transactions.json",
+        "repeatability-matrix-secondary-balances.json",
+        "repeatability-matrix-secondary-transactions.json"
+      ],
+      "model_access": "disabled_and_provider_import_blocked"
+    },
+    {
+      "label": "stage6_human_handoff_failed_attempt",
+      "run_id": "246101e0d773",
+      "status": "failure",
+      "code": "INVALID_CREDENTIALS",
+      "events": "live-handoff-stage6/246101e0d773/events.jsonl"
+    },
+    {
+      "label": "stage6_human_handoff_success",
+      "run_id": "5c4f9a6d4fe9",
+      "status": "success",
+      "code": "SUCCESS",
+      "events": "live-handoff-stage6-retry/5c4f9a6d4fe9/events.jsonl",
+      "intervention": "live-handoff-stage6-retry/5c4f9a6d4fe9/intervention.json"
     }
   ],
   "incomplete": [
     "Provider token/cost/latency metrics were not recorded",
-    "Human takeover evidence records event categories only; no screenshots or raw browser trace is retained"
+    "Human takeover evidence records event categories only; no screenshots or raw browser trace is retained",
+    "The failed Stage 2 discovery attempts have aggregate status but no compiled capability artifact",
+    "The Stage 6 failed credential attempt has no intervention.json because it failed before session expiry"
   ]
 }

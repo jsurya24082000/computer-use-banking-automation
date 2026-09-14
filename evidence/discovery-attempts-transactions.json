@@ -1,0 +1,22 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "failure",
+      "elapsed_seconds": 13.125
+    },
+    {
+      "attempt": 2,
+      "status": "success",
+      "elapsed_seconds": 28.453
+    },
+    {
+      "attempt": 3,
+      "status": "success",
+      "elapsed_seconds": 38.844
+    }
+  ],
+  "provider": "openai",
+  "success_count": 2,
+  "failure_count": 1
+}
