@@ -117,6 +117,8 @@ def main():
                 args.product,
                 tenant,
                 policy,
+                args.tenant,
+                args.policy,
             )
             print(json.dumps(record, indent=2))
             return
@@ -136,12 +138,8 @@ def main():
             from .qualification import approval_matches
 
             artifact = Capability.model_validate_json(Path(args.artifact).read_text())
-            internal_qualification = os.getenv(
-                "AUTOMATION_QUALIFICATION_INTERNAL"
-            ) == "1"
             if (
                 artifact.provenance.kind == "llm_discovery"
-                and not internal_qualification
                 and not approval_matches(args.artifact, artifact, tenant, policy)
             ):
                 raise AutomationError("MISSING_APPROVAL")

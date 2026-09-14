@@ -696,6 +696,7 @@ class BrowserSurface:
         except (ValueError, KeyError):
             raise AutomationError("INVALID_TIMESTAMP") from None
         return BalanceOutputs(
+            member_id=self.inputs.member_id,
             product_name=self.inputs.product_name,
             account_status="Active",
             currency="USD",
@@ -740,6 +741,7 @@ class BrowserSurface:
         if len(rows) > 5:
             raise AutomationError("TOO_MANY_TRANSACTIONS")
         return TransactionsOutputs(
+            member_id=self.inputs.member_id,
             product_name=self.inputs.product_name,
             account_status="Active",
             transactions=rows,

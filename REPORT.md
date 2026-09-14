@@ -76,8 +76,13 @@ and qualification plumbing are implemented for the owner to run.
 Coverage status: the existing scenario matrix covers normal, missing/invalid
 member, absent/closed/restricted accounts, permission denial, session expiry,
 slow loading, bounded retry, and blocking-dialog intervention in the app/tests,
-but a full qualification matrix across all combinations is partial. Adversarial
-safety coverage is substantial and includes forbidden routes/redirects/popups,
+and the qualification matrix now declares independent balance and transaction
+expectations for identity, product/status, ordering, count, dates, and decimal
+amounts. Live qualification across every combination remains owner-run and
+unrecorded. Adversarial safety coverage is substantial and includes forbidden routes/redirects/popups,
 ambiguous locators, sensitive-evidence redaction, ownership dispatch blocking,
-and resume checks. A second controlled tenant variant is not implemented; the
-repository still supports one tenant binding only.
+and resume checks. Two controlled tenant bindings are implemented
+(`tenant.json` and `tenant-secondary.json`); capability reuse requires a
+separate approval per tenant, and tenant, policy, or compatibility changes
+invalidate that approval. Tenant overrides cannot broaden the trusted
+read-only policy.

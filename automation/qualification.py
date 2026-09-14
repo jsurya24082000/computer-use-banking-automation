@@ -10,7 +10,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .evidence import capability_sha256
-from .models import Capability
+from .models import Capability, Tenant
+from .policy import PolicyConfig
+from .qualification_matrix import EXPECTED_BALANCES
 
 SUITE_VERSION = "qualification-v1"
 
@@ -68,11 +70,23 @@ def qualify(
     product="Primary Savings",
     tenant=None,
     policy=None,
+    tenant_path=None,
+    policy_path=None,
 ):
     path = Path(artifact_path)
     capability = Capability.model_validate_json(path.read_text())
+    tenant = tenant or Tenant()
+    policy = policy or PolicyConfig()
     results = []
     with tempfile.TemporaryDirectory(prefix="qualification-") as tmp:
+        tenant_file = Path(tmp) / "tenant.json"
+        policy_file = Path(tmp) / "policy.json"
+        tenant_file.write_text(
+            json.dumps(tenant.model_dump(mode="json"))
+        )
+        policy_file.write_text(
+            json.dumps(policy.model_dump(mode="json"))
+        )
         candidate = Capability.model_validate(
             {**capability.model_dump(), "lifecycle": "approved"}
         )
@@ -84,8 +98,7 @@ def qualify(
                 [
                     sys.executable,
                     "-m",
-                    "automation.cli",
-                    "replay",
+                    "automation.qualification_worker",
                     "--artifact",
                     str(candidate_path),
                     "--member",
@@ -94,17 +107,18 @@ def qualify(
                     product,
                     "--evidence-dir",
                     str(evidence_dir),
+                    "--tenant",
+                    str(tenant_path or tenant_file),
+                    "--policy",
+                    str(policy_path or policy_file),
                 ],
-                env={**os.environ, "AUTOMATION_QUALIFICATION_INTERNAL": "1"},
+                env=os.environ.copy(),
                 capture_output=True,
                 text=True,
                 check=False,
             )
             parsed = _result(result.stdout)
-            expected = {
-                "10001": ("4250.75", "4000.75", "250.00"),
-                "10002": ("9123.45", "9000.00", "123.45"),
-            }.get(member)
+            expected = EXPECTED_BALANCES.get(member)
             outputs = parsed.get("outputs") if parsed else None
             semantic = bool(
                 expected
@@ -114,6 +128,7 @@ def qualify(
                 and parsed.get("code") == "SUCCESS"
                 and outputs
                 and outputs.get("product_name") == product
+                and outputs.get("member_id") == member
                 and outputs.get("account_status") == "Active"
                 and (
                     outputs.get("current_balance"),

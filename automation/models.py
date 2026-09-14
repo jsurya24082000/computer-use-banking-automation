@@ -255,7 +255,8 @@ class Capability(StrictModel):
 
 
 class Tenant(StrictModel):
-    binding_version: Literal["1.0"] = "1.0"
+    tenant_id: Literal["primary", "secondary"] = "primary"
+    binding_version: Literal["1.0", "1.1"] = "1.0"
     entry_url: str = "http://127.0.0.1:8000/"
     frame_name: str = Field(
         default="bank-content", pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,79}$"
@@ -284,6 +285,7 @@ class Ownership(str, Enum):
 
 
 class BalanceOutputs(StrictModel):
+    member_id: str = Field(pattern=r"^[0-9]{5}$")
     product_name: str
     account_status: Literal["Active"]
     currency: Literal["USD"]
@@ -301,6 +303,7 @@ class RecentTransaction(StrictModel):
 
 
 class TransactionsOutputs(StrictModel):
+    member_id: str = Field(pattern=r"^[0-9]{5}$")
     product_name: str
     account_status: Literal["Active"]
     transactions: list[RecentTransaction] = Field(max_length=5)
@@ -311,7 +314,7 @@ class Result(StrictModel):
     code: str
     run_id: str
     step_id: str | None = None
-    outputs: BalanceOutputs | None = None
+    outputs: BalanceOutputs | TransactionsOutputs | None = None
     expected: str | None = None
     observed: str | None = None
     evidence_ref: str | None = None
