@@ -187,6 +187,12 @@ async def replay(
     tenant = tenant or Tenant()
     config = config or RuntimeConfig()
     capability = Capability.model_validate(capability.model_dump())
+    if capability.lifecycle in {"draft", "qualifying", "rejected"}:
+        return Result(
+            status="failure",
+            code="ARTIFACT_NOT_APPROVED",
+            run_id=uuid.uuid4().hex[:12],
+        )
     inputs = Inputs.model_validate(inputs.model_dump())
     run_id = uuid.uuid4().hex[:12]
     evidence = Evidence(config.evidence_dir, run_id, inputs)

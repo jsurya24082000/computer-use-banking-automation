@@ -239,6 +239,7 @@ class Capability(StrictModel):
     policy_requirements: Literal["read-only-v1"] = "read-only-v1"
     resume_checkpoint: Checkpoint = Field(default_factory=lambda: FINAL.model_copy())
     provenance: Provenance
+    lifecycle: Literal["draft", "qualifying", "approved", "rejected"] = "approved"
 
     @model_validator(mode="after")
     def enforce_contract(self):
@@ -290,6 +291,19 @@ class BalanceOutputs(StrictModel):
     available_balance: str = Field(pattern=r"^-?[0-9]+\.[0-9]{2}$")
     active_holds: str = Field(pattern=r"^[0-9]+\.[0-9]{2}$")
     as_of: str
+
+
+class RecentTransaction(StrictModel):
+    posted_at: str
+    description: str
+    amount: str = Field(pattern=r"^-?[0-9]+\.[0-9]{2}$")
+    ledger_balance: str = Field(pattern=r"^-?[0-9]+\.[0-9]{2}$")
+
+
+class TransactionsOutputs(StrictModel):
+    product_name: str
+    account_status: Literal["Active"]
+    transactions: list[RecentTransaction] = Field(max_length=5)
 
 
 class Result(StrictModel):

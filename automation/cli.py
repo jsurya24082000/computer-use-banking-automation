@@ -74,6 +74,10 @@ def main():
             )
         else:
             p.add_argument("--artifact", required=True)
+    qualify = sub.add_parser("qualify")
+    qualify.add_argument("--artifact", required=True)
+    qualify.add_argument("--members", default="10001,10002")
+    qualify.add_argument("--product", default="Primary Savings")
     args = parser.parse_args()
     try:
         if args.command == "seed":
@@ -100,6 +104,16 @@ def main():
                 access_log=False,
             )
             return
+        if args.command == "qualify":
+            from .qualification import qualify
+
+            record = qualify(
+                args.artifact,
+                tuple(args.members.split(",")),
+                args.product,
+            )
+            print(json.dumps(record, indent=2))
+            return
         if args.interactive and not args.headed:
             parser.error("--interactive requires --headed")
         tenant = read_model(args.tenant, Tenant)
@@ -113,8 +127,13 @@ def main():
         inputs = invocation(args)
         if args.command == "replay":
             from .runner import replay
+            from .qualification import approval_matches
 
             artifact = Capability.model_validate_json(Path(args.artifact).read_text())
+            if artifact.provenance.kind == "llm_discovery" and not approval_matches(
+                args.artifact, artifact
+            ):
+                raise AutomationError("MISSING_APPROVAL")
             result = asyncio.run(replay(artifact, inputs, tenant, config, policy))
         else:
             from .provider import FakeProvider, OpenAIProvider

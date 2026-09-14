@@ -92,6 +92,36 @@ python -m automation.cli replay --artifact artifacts/read-account-balances.json 
 
 Replay never constructs a provider or imports the provider module. It returns typed JSON to the caller. Declared output values are not copied into diagnostic logs.
 
+Discovery writes a `draft` artifact. Qualify it against fresh replay invocations
+before normal replay:
+
+```powershell
+python -m automation.cli qualify --artifact artifacts/read-account-balances.json --members 10001,10002
+python -m automation.cli replay --artifact artifacts/read-account-balances.json --member 10002 --product 'Primary Savings'
+```
+
+Qualification writes a bound sanitized sidecar at
+`<artifact>.approval.json`; the hash links records but does not protect against
+an actor who can rewrite both artifact and approval files.
+
+The second read-only goal uses the same visible account-details screen:
+“Find the requested member and active account, then return its five most recent
+transactions.” The typed `surface.recent_transactions()` path enforces the
+accessible table headers, ISO dates, decimal strings, deterministic newest-first
+ordering supplied by the app, and a maximum of five rows. A separate discovered
+transaction artifact/evidence bundle is not claimed until a genuine provider run
+and qualification are performed.
+
+For three independent genuine attempts (each starts a separate CLI/browser run),
+use the owner’s private model environment:
+
+```powershell
+python tools/discovery_attempts.py --runs 3 --provider openai --out evidence/discovery-attempts.json
+```
+
+The runner records successes and failures without provider payloads. It does not
+claim genuine evidence when credentials or model access are unavailable.
+
 Synthetic expected results:
 
 | Invocation | Current | Active holds | Available |
@@ -199,7 +229,7 @@ python tools/verify.py
 python -m ruff check automation banking_app tests tools --select F
 ```
 
-Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 78 passing tests with no failures, errors, or skips.
+Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 80 passing tests with no failures, errors, or skips.
 
 ## Layout and configuration
 

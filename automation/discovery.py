@@ -148,6 +148,7 @@ async def discover(
                                     created_at=utcnow(),
                                 ),
                             )
+                            capability.lifecycle = "draft"
                             # Artifact contains structure/bindings only. A static default
                             # description replaces potentially sensitive natural-language goals.
                             text = capability.model_dump_json(indent=2)

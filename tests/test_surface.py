@@ -174,6 +174,7 @@ async def test_delayed_frame_registration_is_bounded_and_event_driven(bank, inpu
                 document.body.appendChild(iframe);
             }, 100)"""
         )
+        await surface.page.wait_for_timeout(150)
         frame = await surface.frame()
         assert frame.name == "bank-content"
 
@@ -185,6 +186,16 @@ async def test_missing_frame_fails_without_fallback(bank, inputs):
         await surface.page.locator("iframe").evaluate("e=>e.remove()")
         with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
             await surface.frame()
+
+
+@pytest.mark.browser
+async def test_recent_transactions_are_typed_and_ordered(bank, inputs):
+    async with live(bank, inputs) as (surface, evidence):
+        await go_account(surface)
+        result = await surface.recent_transactions()
+        assert len(result.transactions) == 2
+        assert result.transactions[0].posted_at == "2026-09-12"
+        assert result.transactions[1].posted_at == "2026-09-10"
 
 
 @pytest.mark.asyncio

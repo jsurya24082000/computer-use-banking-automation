@@ -22,6 +22,8 @@ from .models import (
     Inputs,
     Ownership,
     RuntimeConfig,
+    RecentTransaction,
+    TransactionsOutputs,
     Strategy,
     Target,
     Tenant,
@@ -701,4 +703,44 @@ class BrowserSurface:
             available_balance=f"{available:.2f}",
             active_holds=f"{holds:.2f}",
             as_of=timestamp,
+        )
+
+    async def recent_transactions(self):
+        if await self.screen() != "account_details":
+            raise AutomationError("CHECKPOINT_FAILED")
+        frame = await self.frame()
+        table = frame.get_by_role(
+            "table", name="Recent synthetic transactions", exact=True
+        )
+        if await table.count() != 1:
+            raise AutomationError("TRANSACTIONS_NOT_FOUND")
+        headers = await visible_texts(table.locator("thead th"))
+        if headers != ["Posted", "Description", "Amount", "Ledger balance"]:
+            raise AutomationError("INVALID_TRANSACTION_HEADERS")
+        rows = []
+        for row in await table.locator("tbody tr").all():
+            cells = await visible_texts(row.locator("td"))
+            if len(cells) != 4 or cells[0] == "No transactions":
+                continue
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", cells[0]):
+                raise AutomationError("INVALID_TRANSACTION_DATE")
+            amounts = []
+            for value in cells[2:]:
+                if not re.fullmatch(r"\$-?(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)\.[0-9]{2}", value):
+                    raise AutomationError("INVALID_TRANSACTION_AMOUNT")
+                amounts.append(Decimal(value[1:].replace(",", "")))
+            rows.append(
+                RecentTransaction(
+                    posted_at=cells[0],
+                    description=cells[1],
+                    amount=f"{amounts[0]:.2f}",
+                    ledger_balance=f"{amounts[1]:.2f}",
+                )
+            )
+        if len(rows) > 5:
+            raise AutomationError("TOO_MANY_TRANSACTIONS")
+        return TransactionsOutputs(
+            product_name=self.inputs.product_name,
+            account_status="Active",
+            transactions=rows,
         )

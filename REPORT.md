@@ -6,7 +6,7 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 78 passing tests with no failures, errors, or
+The latest local verification records 80 passing tests with no failures, errors, or
 skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
 and command timings are in `evidence/repeatability-final.json`.
 
@@ -64,3 +64,11 @@ defensive fail-closed branches, covered by focused tests without fallback to an
 arbitrary frame.
 
 The original assignment PDF was read. The checked-in evidence now includes genuine discovery, replay of its artifact with a different invocation, and a real human takeover/resume; simulated-provider runs remain separately labeled under `evidence/offline/`. The live handoff evidence records event categories and ownership transitions but no screenshots or raw browser trace. Before submission, review the sanitized evidence and publish only after explicit authorization. A production successor would add organizational authentication, approved artifact signing/review, richer vendor adapters and operational controls rather than unnecessary distributed infrastructure.
+
+Artifact lifecycle is now explicit: discovery emits `draft`; the qualification
+command executes an approved copy in fresh subprocess/browser contexts and writes
+a sanitized hash-bound approval sidecar. Normal CLI replay rejects draft,
+qualifying, rejected, or stale/mismatched approved discovery artifacts. No
+genuine transaction discovery or three-attempt provider run is claimed in this
+checkout because model credentials were unavailable; the transaction extractor
+and qualification plumbing are implemented for the owner to run.
