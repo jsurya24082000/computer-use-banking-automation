@@ -76,17 +76,26 @@ python -m automation.cli scenario normal
 python -m automation.cli discover --provider openai \
   --member 10001 --product 'Primary Savings' --headed \
   --goal 'Find the member identified by input_ref member_id and return current and available balances for the active product identified by input_ref product_name.' \
-  --artifact-out artifacts/read-account-balances.json
+  --artifact-out evidence/discovery-attempts/balances/new-candidate-capability.json
 ```
 
-Success writes `artifacts/read-account-balances.json` and a provenance-linked copy under `evidence/live-discovery/<run-id>/capability.json` for the recorded live run. A model's `finish` response cannot create an artifact unless the final state and every required output validate. Invalid model responses get at most two retries; the run has a 25-step and 300-second live-run budget when invoked with `--timeout 300`.
+Success writes a draft candidate at
+`evidence/discovery-attempts/balances/new-candidate-capability.json` and a
+provenance-linked copy under `evidence/live-discovery/<run-id>/capability.json`
+for the recorded live run. Qualify that candidate before replay; the measured
+approved artifact used below is
+`evidence/discovery-attempts/balances/attempt-2-capability.json`. A model's
+`finish` response cannot create an artifact unless the final state and every
+required output validate. Invalid model responses get at most two retries; the
+run has a 25-step and 300-second live-run budget when invoked with `--timeout
+300`.
 
 Now replay **the same discovered artifact with a different member**, with model access disabled:
 
 ```bash
 unset OPENAI_API_KEY
 # PowerShell: Remove-Item Env:OPENAI_API_KEY
-python -m automation.cli replay --artifact artifacts/read-account-balances.json \
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json \
   --member 10002 --product 'Primary Savings'
 ```
 
@@ -96,8 +105,8 @@ Discovery writes a `draft` artifact. Qualify it against fresh replay invocations
 before normal replay:
 
 ```powershell
-python -m automation.cli qualify --artifact artifacts/read-account-balances.json --members 10001,10002
-python -m automation.cli replay --artifact artifacts/read-account-balances.json --member 10002 --product 'Primary Savings'
+python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --members 10001,10002 --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
 ```
 
 Qualification writes a bound sanitized sidecar at
@@ -126,7 +135,7 @@ For the second capability, use the same command with the transaction goal and a
 separate artifact prefix:
 
 ```powershell
-python -m automation.cli discover --provider openai --member 10001 --product 'Primary Savings' --headed --timeout 300 --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-out artifacts/read-recent-transactions.json
+python -m automation.cli discover --provider openai --member 10001 --product 'Primary Savings' --headed --timeout 300 --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-out evidence/discovery-attempts/transactions/new-candidate-capability.json
 ```
 
 Run three independent attempts per workflow without substituting simulated
@@ -143,7 +152,7 @@ The varied approved-artifact matrix is owner-run only until transaction and
 approval artifacts exist. Its intended command is:
 
 ```powershell
-python tools/repeatability_matrix.py --runs 100 --artifacts artifacts/read-account-balances.json,artifacts/read-recent-transactions.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --out evidence/repeatability-matrix.json
+python tools/repeatability_matrix.py --runs 100 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-primary.json
 ```
 
 This checkout does not claim that command was run; the matrix rejects
@@ -184,8 +193,8 @@ reported setup/model issue. For each successfully compiled artifact, qualify
 against both normal members before replay:
 
 ```powershell
-python -m automation.cli qualify --artifact artifacts/read-account-balances.json --members 10001,10002 --product 'Primary Savings'
-python -m automation.cli qualify --artifact artifacts/read-recent-transactions.json --members 10001,10002 --product 'Primary Savings'
+python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli qualify --artifact evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
 ```
 
 The success signal is `"status": "approved"` and a
@@ -194,7 +203,7 @@ rejected; do not manually edit the sidecar. Replay only after approval:
 
 ```powershell
 Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
-python tools/repeatability_matrix.py --runs 100 --artifacts artifacts/read-account-balances.json,artifacts/read-recent-transactions.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --out evidence/repeatability-matrix.json
+python tools/repeatability_matrix.py --runs 100 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-primary.json
 ```
 
 The matrix success signal is a completed sanitized output with exactly 100
@@ -208,7 +217,7 @@ approved artifact and keep **Terminal 1** running:
 
 ```powershell
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact artifacts/read-account-balances.json --member 10001 --product 'Primary Savings' --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10001 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff
 ```
 
 The expected signal is an `intervention_required` result and a visible
@@ -301,7 +310,7 @@ Use a computer with a visible desktop and the terminal in which you start the ru
 
 ```bash
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact artifacts/read-account-balances.json \
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json \
   --member 10001 --product 'Primary Savings' \
   --headed --interactive --timeout 600
 ```
@@ -311,7 +320,7 @@ For the actual operator demonstration, do not automate the interaction:
 ```powershell
 python -m automation.cli seed
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact artifacts/read-account-balances.json --member 10001 --product 'Primary Savings' --headed --interactive --timeout 600
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10001 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600
 ```
 
 When the browser pauses, the operator must type `claim`, reauthenticate in the
