@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -94,6 +95,7 @@ def qualify(
                     "--evidence-dir",
                     str(evidence_dir),
                 ],
+                env={**os.environ, "AUTOMATION_QUALIFICATION_INTERNAL": "1"},
                 capture_output=True,
                 text=True,
                 check=False,
