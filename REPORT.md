@@ -6,7 +6,7 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 78 passing tests with no failures, errors, or
+The latest local verification records 83 passing tests with no failures, errors, or
 skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
 and command timings are in `evidence/repeatability-final.json`.
 
@@ -64,3 +64,55 @@ defensive fail-closed branches, covered by focused tests without fallback to an
 arbitrary frame.
 
 The original assignment PDF was read. The checked-in evidence now includes genuine discovery, replay of its artifact with a different invocation, and a real human takeover/resume; simulated-provider runs remain separately labeled under `evidence/offline/`. The live handoff evidence records event categories and ownership transitions but no screenshots or raw browser trace. Before submission, review the sanitized evidence and publish only after explicit authorization. A production successor would add organizational authentication, approved artifact signing/review, richer vendor adapters and operational controls rather than unnecessary distributed infrastructure.
+
+Artifact lifecycle is now explicit: discovery emits `draft`; the qualification
+command executes an approved copy in fresh subprocess/browser contexts and writes
+a sanitized hash-bound approval sidecar. Normal CLI replay rejects draft,
+qualifying, rejected, or stale/mismatched approved discovery artifacts. No
+genuine transaction discovery or three-attempt provider run is claimed in this
+checkout because model credentials were unavailable; the transaction extractor
+and qualification plumbing are implemented for the owner to run.
+
+Coverage status: the existing scenario matrix covers normal, missing/invalid
+member, absent/closed/restricted accounts, permission denial, session expiry,
+slow loading, bounded retry, and blocking-dialog intervention in the app/tests,
+and the qualification matrix now declares independent balance and transaction
+expectations for identity, product/status, ordering, count, dates, and decimal
+amounts. Live qualification across every combination remains owner-run and
+unrecorded. Adversarial safety coverage is substantial and includes forbidden routes/redirects/popups,
+ambiguous locators, sensitive-evidence redaction, ownership dispatch blocking,
+and resume checks. Two controlled tenant bindings are implemented
+(`tenant.json` and `tenant-secondary.json`); capability reuse requires a
+separate approval per tenant, and tenant, policy, or compatibility changes
+invalidate that approval. Tenant overrides cannot broaden the trusted
+read-only policy.
+
+## Latest owner-run validation
+
+The owner-run stages were performed from source revision `659d6f4` and are
+separate from the historical evidence above. Six genuine OpenAI discovery
+attempts were recorded in `evidence/discovery-attempts-balances.json` and
+`evidence/discovery-attempts-transactions.json`: four succeeded and two failed;
+the failed attempts remain represented in the aggregates and were not
+reclassified or rerun. Four successful capability artifacts were retained under
+`evidence/discovery-attempts/`.
+
+Each successful capability was approved for both `config/tenant.json` and
+`config/tenant-secondary.json`, producing eight approved sidecars. The balance
+capability hashes are `e2817b7d...7697c9a` and `8757db3b...e50b572`; the
+transaction capability hashes are `0604758c...a75ac2b` and
+`e98b2a3f...37ae2ab`. Approval records use distinct tenant digests, so this is
+capability reuse with separate tenant-bound approvals, not an unbound override.
+
+The four reports under `evidence/repeatability-matrix-*.json` contain 100
+model-free executions each (400 total), with zero unexpected mismatches. Each
+report records the expected/observed outcome categories and per-attempt
+verification. The current runner records min/median/max elapsed time, not
+first-attempt/recovery counts or p95; those metrics remain unavailable.
+
+The real handoff evidence is preserved in
+`evidence/live-handoff-stage6/246101e0d773/` and
+`evidence/live-handoff-stage6-retry/5c4f9a6d4fe9/`. The first ends with
+`INVALID_CREDENTIALS` and is not counted as a successful handoff. The retry
+records sanitized human interaction events, `automation -> paused -> human ->
+automation`, `resume_verified`, and final `SUCCESS`.

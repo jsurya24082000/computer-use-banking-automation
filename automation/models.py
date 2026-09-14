@@ -239,6 +239,7 @@ class Capability(StrictModel):
     policy_requirements: Literal["read-only-v1"] = "read-only-v1"
     resume_checkpoint: Checkpoint = Field(default_factory=lambda: FINAL.model_copy())
     provenance: Provenance
+    lifecycle: Literal["draft", "qualifying", "approved", "rejected"] = "approved"
 
     @model_validator(mode="after")
     def enforce_contract(self):
@@ -254,7 +255,8 @@ class Capability(StrictModel):
 
 
 class Tenant(StrictModel):
-    binding_version: Literal["1.0"] = "1.0"
+    tenant_id: Literal["primary", "secondary"] = "primary"
+    binding_version: Literal["1.0", "1.1"] = "1.0"
     entry_url: str = "http://127.0.0.1:8000/"
     frame_name: str = Field(
         default="bank-content", pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,79}$"
@@ -283,6 +285,7 @@ class Ownership(str, Enum):
 
 
 class BalanceOutputs(StrictModel):
+    member_id: str = Field(pattern=r"^[0-9]{5}$")
     product_name: str
     account_status: Literal["Active"]
     currency: Literal["USD"]
@@ -292,12 +295,26 @@ class BalanceOutputs(StrictModel):
     as_of: str
 
 
+class RecentTransaction(StrictModel):
+    posted_at: str
+    description: str
+    amount: str = Field(pattern=r"^-?[0-9]+\.[0-9]{2}$")
+    ledger_balance: str = Field(pattern=r"^-?[0-9]+\.[0-9]{2}$")
+
+
+class TransactionsOutputs(StrictModel):
+    member_id: str = Field(pattern=r"^[0-9]{5}$")
+    product_name: str
+    account_status: Literal["Active"]
+    transactions: list[RecentTransaction] = Field(max_length=5)
+
+
 class Result(StrictModel):
     status: Literal["success", "business_outcome", "intervention_required", "failure"]
     code: str
     run_id: str
     step_id: str | None = None
-    outputs: BalanceOutputs | None = None
+    outputs: BalanceOutputs | TransactionsOutputs | None = None
     expected: str | None = None
     observed: str | None = None
     evidence_ref: str | None = None

@@ -32,6 +32,7 @@ async def test_simulated_discovery_compiles_and_replays_new_inputs(
         assert raw not in serialized
     assert '"input_ref":"member_id"' in serialized
     inputs.member_id = "10002"
+    artifact.lifecycle = "approved"
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     result = await replay(
         artifact, inputs, bank["tenant"], bank["config"], bank["policy"]

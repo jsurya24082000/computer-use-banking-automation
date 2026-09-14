@@ -1,0 +1,36 @@
+{
+  "qualification_suite": "qualification-v1",
+  "status": "approved",
+  "artifact_sha256": "8757db3b5758270019ab55f8f9f1f49620cd19523fa07bc9d9a305f36e50b572",
+  "schema_version": "1.0",
+  "capability_version": "1.0.0",
+  "compatibility": {
+    "product": "demo-credit-union-staff-console",
+    "ui_version": "1.0",
+    "adapter": "playwright-dom-v1"
+  },
+  "policy_digest": "560be84fa4296b56a7908c423e1993cc23a8060ed5c08de7b2944a1fc281f50f",
+  "tenant_digest": "b2bd986326f54a4ebb1bd39ee368634708c1853dabfd34105a8ca29bea7e0f57",
+  "source_revision": "659d6f409ac3c1f1bcedba35a3ab9fa78e5a868c",
+  "provenance": {
+    "kind": "llm_discovery",
+    "run_id": "1af3c41daa85",
+    "provider": "openai-compatible/gpt-4o",
+    "created_at": "2026-09-14T14:14:20.912031+00:00"
+  },
+  "results": [
+    {
+      "slot": 1,
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 2,
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    }
+  ],
+  "created_at": "2026-09-14T14:32:54.343166+00:00"
+}
