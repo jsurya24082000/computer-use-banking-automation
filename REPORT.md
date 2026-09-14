@@ -6,7 +6,7 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 80 passing tests with no failures, errors, or
+The latest local verification records 83 passing tests with no failures, errors, or
 skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
 and command timings are in `evidence/repeatability-final.json`.
 
@@ -72,3 +72,12 @@ qualifying, rejected, or stale/mismatched approved discovery artifacts. No
 genuine transaction discovery or three-attempt provider run is claimed in this
 checkout because model credentials were unavailable; the transaction extractor
 and qualification plumbing are implemented for the owner to run.
+
+Coverage status: the existing scenario matrix covers normal, missing/invalid
+member, absent/closed/restricted accounts, permission denial, session expiry,
+slow loading, bounded retry, and blocking-dialog intervention in the app/tests,
+but a full qualification matrix across all combinations is partial. Adversarial
+safety coverage is substantial and includes forbidden routes/redirects/popups,
+ambiguous locators, sensitive-evidence redaction, ownership dispatch blocking,
+and resume checks. A second controlled tenant variant is not implemented; the
+repository still supports one tenant binding only.

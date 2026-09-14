@@ -78,6 +78,8 @@ def main():
     qualify.add_argument("--artifact", required=True)
     qualify.add_argument("--members", default="10001,10002")
     qualify.add_argument("--product", default="Primary Savings")
+    qualify.add_argument("--tenant", default="config/tenant.json")
+    qualify.add_argument("--policy", default="config/policy.json")
     args = parser.parse_args()
     try:
         if args.command == "seed":
@@ -107,10 +109,14 @@ def main():
         if args.command == "qualify":
             from .qualification import qualify
 
+            tenant = read_model(args.tenant, Tenant)
+            policy = read_model(args.policy, PolicyConfig)
             record = qualify(
                 args.artifact,
                 tuple(args.members.split(",")),
                 args.product,
+                tenant,
+                policy,
             )
             print(json.dumps(record, indent=2))
             return
@@ -131,7 +137,7 @@ def main():
 
             artifact = Capability.model_validate_json(Path(args.artifact).read_text())
             if artifact.provenance.kind == "llm_discovery" and not approval_matches(
-                args.artifact, artifact
+                args.artifact, artifact, tenant, policy
             ):
                 raise AutomationError("MISSING_APPROVAL")
             result = asyncio.run(replay(artifact, inputs, tenant, config, policy))

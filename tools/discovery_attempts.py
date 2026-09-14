@@ -15,10 +15,16 @@ def main():
     parser.add_argument("--provider", choices=["openai", "fake"], default="openai")
     parser.add_argument("--member", default="10001")
     parser.add_argument("--product", default="Primary Savings")
+    parser.add_argument("--goal", default=None)
     parser.add_argument("--out", default="evidence/discovery-attempts.json")
     args = parser.parse_args()
     if args.runs < 3:
         parser.error("--runs must be at least 3")
+    goal = args.goal or (
+        "Find the member identified by input_ref member_id and return the current "
+        "and available balances for the active account identified by input_ref "
+        "product_name."
+    )
     records = []
     for index in range(args.runs):
         started = time.monotonic()
@@ -36,6 +42,8 @@ def main():
                 args.product,
                 "--artifact-out",
                 f"evidence/discovery-attempt-{index + 1}.json",
+                "--goal",
+                goal,
             ],
             env=os.environ.copy(),
             capture_output=True,

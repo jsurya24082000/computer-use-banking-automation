@@ -122,6 +122,34 @@ python tools/discovery_attempts.py --runs 3 --provider openai --out evidence/dis
 The runner records successes and failures without provider payloads. It does not
 claim genuine evidence when credentials or model access are unavailable.
 
+For the second capability, use the same command with the transaction goal and a
+separate artifact prefix:
+
+```powershell
+python -m automation.cli discover --provider openai --member 10001 --product 'Primary Savings' --headed --timeout 300 --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-out artifacts/read-recent-transactions.json
+```
+
+Run three independent attempts per workflow without substituting simulated
+responses:
+
+```powershell
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --out evidence/discovery-attempts-balances.json
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --goal 'Find the requested member and active account, then return its five most recent transactions.' --out evidence/discovery-attempts-transactions.json
+```
+
+Every attempt remains recorded, including failures.
+
+The varied approved-artifact matrix is owner-run only until transaction and
+approval artifacts exist. Its intended command is:
+
+```powershell
+python tools/repeatability_matrix.py --runs 100 --artifacts artifacts/read-account-balances.json,artifacts/read-recent-transactions.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --out evidence/repeatability-matrix.json
+```
+
+This checkout does not claim that command was run; the matrix must reject
+unapproved artifacts, omit model credentials, preserve failures, and report
+expected business outcomes separately from successful extraction.
+
 Synthetic expected results:
 
 | Invocation | Current | Active holds | Available |
@@ -210,6 +238,18 @@ python -m automation.cli replay --artifact artifacts/read-account-balances.json 
   --headed --interactive --timeout 600
 ```
 
+For the actual operator demonstration, do not automate the interaction:
+
+```powershell
+python -m automation.cli seed
+python -m automation.cli scenario session_expiry
+python -m automation.cli replay --artifact artifacts/read-account-balances.json --member 10001 --product 'Primary Savings' --headed --interactive --timeout 600
+```
+
+When the browser pauses, the operator must type `claim`, reauthenticate in the
+existing browser window, confirm the requested account, and type `resume`.
+The demonstration remains incomplete until a real operator performs those steps.
+
 1. Automation reaches account details, encounters the expired session, and stops dispatching actions.
 2. The same terminal prints the intervention/run ID. Type `claim`.
 3. In the **existing browser window**, sign in with the demo teller credentials. Do not open a new window or restart the app. The bank rotates its authentication cookie normally but the browser process, context, and page are preserved.
@@ -229,7 +269,7 @@ python tools/verify.py
 python -m ruff check automation banking_app tests tools --select F
 ```
 
-Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 80 passing tests with no failures, errors, or skips.
+Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 83 passing tests with no failures, errors, or skips.
 
 ## Layout and configuration
 
