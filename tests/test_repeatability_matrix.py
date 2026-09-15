@@ -329,6 +329,21 @@ def test_assess_requires_every_requested_combination(rm):
     assert verdict["missing_combinations"] == [required[1]]
 
 
+async def test_run_one_accepts_path_for_retained_evidence(rm, tmp_path, monkeypatch):
+    from unittest.mock import AsyncMock
+
+    monkeypatch.setattr(rm, "set_scenario", lambda scenario: None)
+    replay = AsyncMock(return_value=_balance_result())
+    monkeypatch.setattr(rm, "replay", replay)
+    result, elapsed = await rm.run_one(
+        executor_artifact(), "10001", "Primary Savings", "normal",
+        Tenant(), PolicyConfig(), tmp_path,
+    )
+    assert result.status == "success"
+    assert elapsed >= 0
+    assert replay.await_args.args[3].evidence_dir == str(tmp_path)
+
+
 async def test_matrix_retains_progress_evidence_and_revision(rm, tmp_path, monkeypatch, capsys):
     import json
     from unittest.mock import AsyncMock

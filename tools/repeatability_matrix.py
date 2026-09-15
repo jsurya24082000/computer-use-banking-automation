@@ -315,7 +315,7 @@ async def run_one(capability, member_id, product_name, scenario, tenant, policy,
         headless=True,
         interactive=False,
         overall_timeout_seconds=30,
-        evidence_dir=evidence_dir,
+        evidence_dir=str(evidence_dir),
     )
     started = time.monotonic()
     result = await replay(capability, inputs, tenant, config, policy)
