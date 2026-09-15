@@ -25,6 +25,7 @@ TRANSACTION_CASES = (
     QualificationCase("transactions-10001", "10001", "Primary Savings", "success", "SUCCESS"),
     QualificationCase("transactions-10002", "10002", "Primary Savings", "success", "SUCCESS"),
     QualificationCase("transactions-missing-member", "99999", "Primary Savings", "business_outcome", "MEMBER_NOT_FOUND"),
+    QualificationCase("transactions-closed-product", "10001", "Holiday Savings", "business_outcome", "NO_ELIGIBLE_ACCOUNT"),
 )
 
 EXPECTED_BALANCES = {

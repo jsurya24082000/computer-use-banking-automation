@@ -1,14 +1,14 @@
 {
-  "executed_at": "2026-09-14T05:12:49.416388+00:00",
-  "python": "3.14.0",
+  "executed_at": "2026-09-15T04:07:37.855172+00:00",
+  "python": "3.12.10",
   "exit_code": 0,
   "counts": {
-    "tests": 111,
+    "tests": 138,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
-  "duration_seconds": 133.668,
+  "duration_seconds": 267.181,
   "browser": "Playwright Chromium",
   "human_test_note": "Human takeover tests use a simulated operator; no real human demo is claimed.",
   "llm_test_note": "Discovery tests use a fake provider; no genuine LLM demo is claimed."

@@ -1,6 +1,12 @@
 """Compile observation references into reusable typed targets; never string-replace."""
 
-from .models import Action, AutomationError, Checkpoint, Decision
+from .models import (
+    Action,
+    AutomationError,
+    Checkpoint,
+    Decision,
+    WORKFLOW_OUTPUTS,
+)
 
 
 def compile_action(decision: Decision, controls: dict) -> Action:
@@ -27,7 +33,7 @@ def compile_action(decision: Decision, controls: dict) -> Action:
         raise AutomationError("INVALID_MODEL_RESPONSE") from None
 
 
-def observed_checkpoint(screen: str):
+def observed_checkpoint(screen: str, workflow: str = "read_account_balances"):
     if screen not in (
         "sign_in",
         "member_search",
@@ -38,10 +44,21 @@ def observed_checkpoint(screen: str):
         raise AutomationError(
             "REVIEW_REQUIRED", "supported checkpoint", "uncompilable page state"
         )
+    if workflow not in WORKFLOW_OUTPUTS:
+        raise AutomationError("UNSUPPORTED_WORKFLOW")
+    # Recorded step checkpoints verify the same output family the declared
+    # workflow extracts, so a transactions artifact never replays a step that
+    # silently proves balances instead.
     return Checkpoint(
         screen=screen,
         verify_member=screen in ("member_overview", "account_details"),
         verify_product=screen == "account_details",
         require_active=screen == "account_details",
-        require_balances=screen == "account_details",
+        require_balances=(
+            screen == "account_details" and workflow == "read_account_balances"
+        ),
+        require_transactions=(
+            screen == "account_details"
+            and workflow == "read_recent_transactions"
+        ),
     )

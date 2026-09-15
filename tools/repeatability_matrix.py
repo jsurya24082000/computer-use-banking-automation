@@ -69,7 +69,14 @@ builtins.__import__ = _guarded_import
 import httpx
 
 from automation.evidence import capability_sha256
-from automation.models import Capability, Inputs, RuntimeConfig, Tenant
+from automation.models import (
+    BalanceOutputs,
+    Capability,
+    Inputs,
+    RuntimeConfig,
+    Tenant,
+    TransactionsOutputs,
+)
 from automation.policy import PolicyConfig
 from automation.qualification import approval_matches
 from automation.runner import replay
@@ -78,20 +85,22 @@ from banking_app.db import seed as seed_bank
 
 # Synthetic seed truth (banking_app/db.py). Used only to predict the correct
 # business outcome for a combination, never to fabricate a replay result.
+# "transactions" rows are (posted_at, amount, ledger_balance) in the app's
+# newest-first display order.
 ACCOUNTS = {
-    ("10001", "Primary Savings"): {"status": "Active", "balances": ("4250.75", "4000.75", "250.00")},
-    ("10001", "Everyday Checking"): {"status": "Active", "balances": ("1840.20", "1840.20", "0.00")},
+    ("10001", "Primary Savings"): {"status": "Active", "balances": ("4250.75", "4000.75", "250.00"), "transactions": (("2026-09-12", "150.00", "4250.75"), ("2026-09-10", "4100.75", "4100.75"))},
+    ("10001", "Everyday Checking"): {"status": "Active", "balances": ("1840.20", "1840.20", "0.00"), "transactions": (("2026-09-12", "150.00", "1840.20"), ("2026-09-10", "1690.20", "1690.20"))},
     ("10001", "Holiday Savings"): {"status": "Closed"},
-    ("10002", "Primary Savings"): {"status": "Active", "balances": ("9123.45", "9000.00", "123.45")},
-    ("10003", "Primary Savings"): {"status": "Active", "balances": ("670.00", "670.00", "0.00")},
-    ("10004", "Primary Savings"): {"status": "Active", "balances": ("1250.00", "1250.00", "0.00")},
-    ("10004", "Education Savings"): {"status": "Active", "balances": ("7000.00", "7000.00", "0.00")},
-    ("10005", "Everyday Checking"): {"status": "Active", "balances": ("800.00", "800.00", "0.00")},
+    ("10002", "Primary Savings"): {"status": "Active", "balances": ("9123.45", "9000.00", "123.45"), "transactions": (("2026-09-12", "150.00", "9123.45"), ("2026-09-10", "8973.45", "8973.45"))},
+    ("10003", "Primary Savings"): {"status": "Active", "balances": ("670.00", "670.00", "0.00"), "transactions": (("2026-09-12", "150.00", "670.00"), ("2026-09-10", "520.00", "520.00"))},
+    ("10004", "Primary Savings"): {"status": "Active", "balances": ("1250.00", "1250.00", "0.00"), "transactions": (("2026-09-12", "150.00", "1250.00"), ("2026-09-10", "1100.00", "1100.00"))},
+    ("10004", "Education Savings"): {"status": "Active", "balances": ("7000.00", "7000.00", "0.00"), "transactions": (("2026-09-12", "150.00", "7000.00"), ("2026-09-10", "6850.00", "6850.00"))},
+    ("10005", "Everyday Checking"): {"status": "Active", "balances": ("800.00", "800.00", "0.00"), "transactions": (("2026-09-12", "150.00", "800.00"), ("2026-09-10", "650.00", "650.00"))},
     ("10006", "Primary Savings"): {"status": "Closed"},
     ("10007", "Primary Savings"): {"status": "Active", "restricted": True},
-    ("10008", "Primary Savings"): {"status": "Active", "balances": ("720.00", "720.00", "0.00")},
-    ("10009", "Primary Savings"): {"status": "Active", "balances": ("860.00", "860.00", "0.00")},
-    ("10010", "Primary Savings"): {"status": "Active", "balances": ("940.00", "940.00", "0.00")},
+    ("10008", "Primary Savings"): {"status": "Active", "balances": ("720.00", "720.00", "0.00"), "transactions": (("2026-09-12", "150.00", "720.00"), ("2026-09-10", "570.00", "570.00"))},
+    ("10009", "Primary Savings"): {"status": "Active", "balances": ("860.00", "860.00", "0.00"), "transactions": (("2026-09-12", "150.00", "860.00"), ("2026-09-10", "710.00", "710.00"))},
+    ("10010", "Primary Savings"): {"status": "Active", "balances": ("940.00", "940.00", "0.00"), "transactions": (("2026-09-12", "150.00", "940.00"), ("2026-09-10", "790.00", "790.00"))},
 }
 MEMBERS = {"10001", "10002", "10003", "10004", "10005", "10006", "10007", "10008", "10009", "10010"}
 
@@ -141,6 +150,83 @@ def bucket_for(status: str) -> str:
         "intervention_required": "intervention_required",
         "failure": "failure",
     }.get(status, "failure")
+
+
+def verify_outputs(capability, member_id: str, product_name: str, result) -> bool:
+    """In-memory semantic check of produced outputs against declared seed truth.
+
+    Dispatches on the capability's declared workflow name, so a transactions
+    artifact is verified against expected transaction rows (never balances) and
+    a balance artifact against expected balance fields. A wrong output type or
+    an account without declared expectations is a failed verification, not a
+    skipped one.
+    """
+    outputs = result.outputs
+    account = ACCOUNTS.get((member_id, product_name), {})
+    if capability.name == "read_recent_transactions":
+        expected = account.get("transactions")
+        return bool(
+            isinstance(outputs, TransactionsOutputs)
+            and expected is not None
+            and tuple(
+                (row.posted_at, row.amount, row.ledger_balance)
+                for row in outputs.transactions
+            )
+            == expected
+        )
+    expected = account.get("balances")
+    return bool(
+        isinstance(outputs, BalanceOutputs)
+        and expected
+        and (
+            outputs.current_balance,
+            outputs.available_balance,
+            outputs.active_holds,
+        )
+        == expected
+    )
+
+
+def assess(records, artifact_reports, requested_runs: int) -> dict:
+    """Decide whether the recorded matrix run may be reported as passing.
+
+    A run fails when any expected outcome mismatches, any successful extraction
+    produced unverified or incorrectly typed outputs, any *requested* artifact
+    was rejected (rejection is recorded but never substitutes for coverage), or
+    coverage is incomplete: fewer attempts than requested, or a requested
+    artifact that was never exercised.
+    """
+    mismatches = [
+        r["iteration"]
+        for r in records
+        if not r["matches_expectation"] and r["category"] != "rejected_artifact"
+    ]
+    unverified = [
+        r["iteration"]
+        for r in records
+        if r["outputs_verified_in_memory"] is False
+    ]
+    rejected = [
+        path for path, info in artifact_reports.items() if not info["accepted"]
+    ]
+    exercised = {
+        r["artifact"] for r in records if r["category"] != "rejected_artifact"
+    }
+    uncovered = [p for p in artifact_reports if p not in exercised]
+    ok = (
+        not mismatches
+        and not unverified
+        and not rejected
+        and not uncovered
+        and len(records) == requested_runs
+    )
+    return {
+        "unexpected_mismatch_iterations": mismatches,
+        "unverified_output_iterations": unverified,
+        "rejected_required_artifacts": rejected,
+        "uncovered_artifacts": uncovered,
+        "ok": ok,
+    }
 
 
 def evaluate_artifact(path_str: str, tenant: Tenant, policy: PolicyConfig):
@@ -338,19 +424,15 @@ async def main():
             )
             category = bucket_for(result.status)
             matches = (result.status, result.code) == (expected_status, expected_code)
-            verified = None
             if category == "extraction_success":
-                expected_balances = ACCOUNTS.get((member_id, product_name), {}).get("balances")
-                verified = bool(
-                    expected_balances
-                    and result.outputs
-                    and (
-                        result.outputs.current_balance,
-                        result.outputs.available_balance,
-                        result.outputs.active_holds,
-                    )
-                    == expected_balances
+                verified = verify_outputs(
+                    capabilities[artifact_path], member_id, product_name, result
                 )
+            elif result.outputs is not None:
+                # A non-success result that still carries outputs is incorrect.
+                verified = False
+            else:
+                verified = None
             records.append(
                 {
                     **base,
@@ -367,7 +449,7 @@ async def main():
     counts = {}
     for record in records:
         counts[record["category"]] = counts.get(record["category"], 0) + 1
-    mismatches = [r["iteration"] for r in records if not r["matches_expectation"] and r["category"] != "rejected_artifact"]
+    verdict = assess(records, artifact_reports, args.runs)
     elapsed_values = [r["elapsed_seconds"] for r in records if r["elapsed_seconds"] is not None]
 
     summary = {
@@ -377,7 +459,11 @@ async def main():
         "recorded_attempts": len(records),
         "artifacts": [artifact_reports[a] for a in requested_artifacts],
         "category_counts": counts,
-        "unexpected_mismatch_iterations": mismatches,
+        "unexpected_mismatch_iterations": verdict["unexpected_mismatch_iterations"],
+        "unverified_output_iterations": verdict["unverified_output_iterations"],
+        "rejected_required_artifacts": verdict["rejected_required_artifacts"],
+        "uncovered_artifacts": verdict["uncovered_artifacts"],
+        "ok": verdict["ok"],
         "elapsed_seconds": (
             {
                 "min": min(elapsed_values),
@@ -398,16 +484,26 @@ async def main():
                 "out": str(destination),
                 "recorded_attempts": summary["recorded_attempts"],
                 "category_counts": counts,
-                "unexpected_mismatch_count": len(mismatches),
+                "unexpected_mismatch_count": len(
+                    verdict["unexpected_mismatch_iterations"]
+                ),
+                "unverified_output_count": len(
+                    verdict["unverified_output_iterations"]
+                ),
+                "rejected_required_artifacts": verdict[
+                    "rejected_required_artifacts"
+                ],
+                "uncovered_artifacts": verdict["uncovered_artifacts"],
                 "artifacts": [
                     {"path": a["path"], "accepted": a["accepted"], "reason": a.get("reason")}
                     for a in summary["artifacts"]
                 ],
+                "ok": verdict["ok"],
             },
             indent=2,
         )
     )
-    raise SystemExit(0 if not mismatches else 1)
+    raise SystemExit(0 if verdict["ok"] else 1)
 
 
 if __name__ == "__main__":

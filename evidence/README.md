@@ -26,9 +26,12 @@ To regenerate offline evidence, start the bank and run `python tools/collect_off
 ## Latest owner-run validation
 
 The latest owner-run evidence was collected from source revision `659d6f4`.
-Stage 2 contains six genuine OpenAI discovery attempts: two balance successes,
-two transaction successes, and one preserved failure in each workflow. The
-successful capability artifacts are under `discovery-attempts/`; the aggregate
+Stage 2 contains six genuine OpenAI discovery attempts: two successes and one
+preserved failure for each of the balances and transactions goals. All four
+successful attempts compiled `read_account_balances` capabilities — the
+transaction-goal runs predated the typed `--workflow` discriminator, so the
+artifacts preserved under `discovery-attempts/transactions/` are
+balance-workflow capabilities, not transaction capabilities. The aggregate
 records are `discovery-attempts-balances.json` and
 `discovery-attempts-transactions.json`.
 
@@ -36,11 +39,19 @@ Stage 3 contains eight approved sidecars: the four successful capabilities were
 qualified against both `config/tenant.json` and
 `config/tenant-secondary.json`. The same capability hashes are reused across
 tenants, while the tenant digests differ and bind each approval separately.
+Both tenants bind the same local UI build, so the secondary binding proves
+per-tenant approval scoping rather than a different UI variant. After the
+workflow schema change, the sidecars were regenerated through real
+qualification runs at revision `26dbf9d5`; the artifact files themselves were
+not modified.
 
 Stage 4 contains four model-free reports, each with 100 recorded attempts and
-zero unexpected mismatches: primary/secondary tenant crossed with
-balances/transactions. The reports preserve category counts and per-attempt
-expected/observed status. They do not record first-attempt/recovery counts or
+zero unexpected mismatches: primary/secondary tenant crossed with the two
+attempt directories. Because every retained artifact is a `read_account_balances`
+capability, all four reports exercised balance extraction; the reports labeled
+transactions did not verify transaction outputs. The reports preserve category
+counts and per-attempt expected/observed status. They do not record
+first-attempt/recovery counts or
 p95 duration because the current runner does not measure those fields.
 
 Stage 6 preserves both actual-person handoff attempts. The failed run

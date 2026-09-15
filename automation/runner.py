@@ -9,11 +9,13 @@ from .models import (
     Action,
     AutomationError,
     Capability,
+    FINAL,
     Inputs,
     Ownership,
     Result,
     RuntimeConfig,
     Tenant,
+    WORKFLOW_FINAL_CHECKPOINT,
 )
 from .policy import Policy, PolicyConfig
 from .surface import BrowserSurface, role_target
@@ -93,7 +95,14 @@ class Execution:
         from .handoff import HandoffController
 
         controller = HandoffController(self.surface, self.evidence, self.operator)
-        checkpoint = self.capability.resume_checkpoint if self.capability else None
+        if self.capability:
+            checkpoint = self.capability.resume_checkpoint
+        else:
+            # Discovery has no compiled capability yet; the resume checkpoint
+            # must still verify the workflow actually being recorded.
+            checkpoint = WORKFLOW_FINAL_CHECKPOINT.get(
+                self.surface.workflow, FINAL
+            )
         await controller.takeover(self.step_id, code, checkpoint)
         self.human_completed = True
 
@@ -208,7 +217,12 @@ async def replay(
     if tenant.compatibility != capability.compatibility:
         return Result(status="failure", code="INCOMPATIBLE_BINDING", run_id=run_id)
     surface = BrowserSurface(
-        tenant, inputs, config, Policy(policy_config or PolicyConfig()), evidence
+        tenant,
+        inputs,
+        config,
+        Policy(policy_config or PolicyConfig()),
+        evidence,
+        workflow=capability.name,
     )
     execution = Execution(surface, evidence, capability, operator)
     try:
@@ -233,7 +247,7 @@ async def replay(
                         if execution.human_completed:
                             break
                     await surface.verify(capability.final_checkpoint)
-                    outputs = await surface.balances()
+                    outputs = await surface.extract_outputs()
                     surface.ownership = Ownership.COMPLETED
                     evidence.event("run_finished", status="success", code="SUCCESS")
                     return Result(

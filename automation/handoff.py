@@ -3,7 +3,12 @@
 import asyncio
 import threading
 from typing import Protocol
-from .models import AutomationError, FINAL, Ownership
+from .models import (
+    AutomationError,
+    FINAL,
+    Ownership,
+    WORKFLOW_FINAL_CHECKPOINT,
+)
 
 
 class Operator(Protocol):
@@ -58,14 +63,24 @@ class HandoffController:
     async def takeover(self, step_id, code, checkpoint=None):
         # Called only after the awaited action has settled/failed, never concurrently.
         self.transition(Ownership.PAUSED)
-        self.evidence.intervention(step_id, code, await self.surface.snapshot())
+        self.evidence.intervention(
+            step_id,
+            code,
+            await self.surface.snapshot(),
+            capability=getattr(
+                self.surface, "workflow", "read_account_balances"
+            ),
+        )
         if not self.surface.config.interactive or self.surface.config.headless:
             raise AutomationError(
                 "OPERATOR_UNAVAILABLE",
                 "visible browser and interactive terminal",
                 "intervention recorded; noninteractive run ends",
             )
-        checkpoint = checkpoint or FINAL
+        if checkpoint is None:
+            checkpoint = WORKFLOW_FINAL_CHECKPOINT.get(
+                getattr(self.surface, "workflow", None), FINAL
+            )
         try:
             async with asyncio.timeout(self.surface.config.operator_timeout_seconds):
                 while True:
@@ -109,7 +124,7 @@ class HandoffController:
                     self.evidence.event(
                         "resume_verified",
                         step_id=step_id,
-                        checkpoint="requested active account and balances",
+                        checkpoint="requested active account and declared outputs",
                     )
                     self.transition(Ownership.AUTOMATION)
                     return

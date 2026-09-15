@@ -47,8 +47,8 @@ does not include model token or cost data.
 
 | Check | Recorded result | Evidence | Notes |
 |---|---:|---|---|
-| Pytest suite | 83 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.14.0 and Playwright Chromium. |
-| Test duration | 238.271 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
+| Pytest suite | 138 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.12.10 and Playwright Chromium. |
+| Test duration | 267.181 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
 | Genuine-provider test | Not part of suite | `evidence/test-summary.json`; `evidence/live-discovery/77525c9151e2/events.jsonl` | The test suite uses a fake provider; the separate live run records genuine provider discovery. |
 
 ## Evidence handling and unavailable metrics
@@ -94,6 +94,18 @@ revision `659d6f4`; they are not replacements for historical evidence.
 | 4 — model-free repeatability | 400 attempts, 0 unexpected mismatches | `evidence/repeatability-matrix-primary-balances.json`; `evidence/repeatability-matrix-primary-transactions.json`; `evidence/repeatability-matrix-secondary-balances.json`; `evidence/repeatability-matrix-secondary-transactions.json` |
 | 6 — real human handoff | 1 preserved `INVALID_CREDENTIALS` failure and 1 `SUCCESS` | `evidence/live-handoff-stage6/246101e0d773/events.jsonl`; `evidence/live-handoff-stage6-retry/5c4f9a6d4fe9/events.jsonl`; successful `intervention.json` |
 
+Stage 2 audit note: all four retained artifacts are `read_account_balances`
+capabilities. The transaction-goal attempts ran before the typed `--workflow`
+discriminator existed, so the artifacts stored under
+`evidence/discovery-attempts/transactions/` compile the balance workflow; no
+`read_recent_transactions` artifact is recorded. Stage 3 sidecars were
+regenerated through real qualification runs at revision `26dbf9d5` after the
+workflow schema change; artifact bytes were not modified. Both tenant bindings
+target the same local UI build, so the secondary binding demonstrates
+per-tenant approval scoping, not a different UI variant. Stage 4 reports
+labeled transactions replayed those balance-workflow artifacts and verified
+balance outputs.
+
 The successful Stage 6 event log verifies
 `automation -> paused -> human -> automation`, sanitized human interaction
 events, a rejected early resume, `resume_verified`, and final `SUCCESS`. The
@@ -101,12 +113,14 @@ failed attempt ended before intervention and therefore has no intervention
 sidecar.
 
 The four approved capability hashes are recorded in their sidecars and reused
-across both tenants with distinct tenant digests:
+across both tenants with distinct tenant digests. All four artifacts declare
+`read_account_balances`; the "attempt goal" column records which discovery goal
+produced each artifact, not a transaction capability type:
 
-| Workflow artifact hash | Workflow |
+| Approved artifact hash | Attempt goal |
 |---|---|
-| `e2817b7d...7697c9a`; `8757db3b...e50b572` | balances |
-| `0604758c...a75ac2b`; `e98b2a3f...37ae2ab` | transactions |
+| `6b352786...b7ffe9a`; `ccdb2b9f...0e01855` | balances |
+| `e26ed1b2...eb7e047`; `f67d96f3...ff81c56` | transactions (compiled `read_account_balances`) |
 
 The latest owner-run matrix reports include category counts and expected versus
 observed outcomes. The runner does not record first-attempt/recovery counts or

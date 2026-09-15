@@ -1,7 +1,9 @@
 {
   "qualification_suite": "qualification-v1",
+  "capability_name": "read_account_balances",
   "status": "approved",
-  "artifact_sha256": "e98b2a3fd6e4439fc2e620293bf16bd3299ef7cbc5adecaeb9e7446b137ae2ab",
+  "suite_error": null,
+  "artifact_sha256": "f67d96f3e91baf56288d2e8a77e82bea8baee78d233b0bc774392dc72ff81c56",
   "schema_version": "1.0",
   "capability_version": "1.0.0",
   "compatibility": {
@@ -11,7 +13,7 @@
   },
   "policy_digest": "560be84fa4296b56a7908c423e1993cc23a8060ed5c08de7b2944a1fc281f50f",
   "tenant_digest": "b2bd986326f54a4ebb1bd39ee368634708c1853dabfd34105a8ca29bea7e0f57",
-  "source_revision": "659d6f409ac3c1f1bcedba35a3ab9fa78e5a868c",
+  "source_revision": "26dbf9d58f5859b8a65345c4b26648cdb0124806",
   "provenance": {
     "kind": "llm_discovery",
     "run_id": "73ce0596005c",
@@ -21,16 +23,32 @@
   "results": [
     {
       "slot": 1,
+      "case": "member-10001",
       "status": "success",
       "code": "SUCCESS",
       "run_recorded": true
     },
     {
       "slot": 2,
+      "case": "member-10002",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 3,
+      "case": "missing-member",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 4,
+      "case": "closed-product",
       "status": "success",
       "code": "SUCCESS",
       "run_recorded": true
     }
   ],
-  "created_at": "2026-09-14T14:33:04.779693+00:00"
+  "created_at": "2026-09-15T00:04:41.452895+00:00"
 }

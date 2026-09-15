@@ -5,12 +5,28 @@ import subprocess
 import sys
 from pathlib import Path
 
-from automation.models import Inputs, Tenant
+from automation.models import (
+    BalanceOutputs,
+    Inputs,
+    RecentTransaction,
+    Result,
+    Tenant,
+    TransactionsOutputs,
+)
 from automation.evidence import capability_sha256
-from automation.qualification import approval_matches, digest_json, qualify
+from automation.qualification import (
+    WORKFLOW_CASES,
+    approval_matches,
+    digest_json,
+    qualify,
+)
+from automation.qualification_matrix import (
+    EXPECTED_BALANCES,
+    EXPECTED_TRANSACTIONS,
+)
 from automation.policy import PolicyConfig
 from automation.runner import replay
-from .artifacts import executor_artifact
+from .artifacts import executor_artifact, transactions_artifact
 
 
 @pytest.mark.asyncio
@@ -200,3 +216,159 @@ def test_qualification_rejects_semantically_wrong_outputs(tmp_path, monkeypatch)
     record = qualify(artifact_path)
     assert record["status"] == "rejected"
     assert record["results"][0]["run_recorded"] is True
+
+
+def _fake_worker(case_lookup):
+    """Qualification-worker stub returning declared-correct results per case."""
+    real_run = subprocess.run
+
+    def run(cmd, *args, **kwargs):
+        if "automation.qualification_worker" not in cmd:
+            return real_run(cmd, *args, **kwargs)
+        member = cmd[cmd.index("--member") + 1]
+        product = cmd[cmd.index("--product") + 1]
+        case = case_lookup[(member, product)]
+
+        class Completed:
+            pass
+
+        completed = Completed()
+        completed.returncode = 0
+        if case.expected_status == "success":
+            if case in WORKFLOW_CASES["read_recent_transactions"]:
+                outputs = TransactionsOutputs(
+                    member_id=member,
+                    product_name=product,
+                    account_status="Active",
+                    transactions=[
+                        RecentTransaction(
+                            posted_at=posted,
+                            description="Synthetic entry",
+                            amount=amount,
+                            ledger_balance=balance,
+                        )
+                        for posted, amount, balance in EXPECTED_TRANSACTIONS[
+                            member
+                        ]
+                    ],
+                ).model_dump(mode="json")
+            else:
+                current, available, holds = EXPECTED_BALANCES[member]
+                outputs = BalanceOutputs(
+                    member_id=member,
+                    product_name=product,
+                    account_status="Active",
+                    currency="USD",
+                    current_balance=current,
+                    available_balance=available,
+                    active_holds=holds,
+                    as_of="2026-09-13T12:00:00Z",
+                ).model_dump(mode="json")
+            completed.stdout = json.dumps(
+                Result(
+                    status="success", code="SUCCESS", run_id="abcdefabcdef"
+                ).model_dump()
+                | {"outputs": outputs}
+            )
+        else:
+            completed.stdout = json.dumps(
+                {
+                    "status": case.expected_status,
+                    "code": case.expected_code,
+                    "run_id": "abcdefabcdef",
+                }
+            )
+        return completed
+
+    return run
+
+
+@pytest.mark.parametrize(
+    "artifact_factory,workflow",
+    [
+        (executor_artifact, "read_account_balances"),
+        (transactions_artifact, "read_recent_transactions"),
+    ],
+)
+def test_qualification_approves_declared_suite(
+    tmp_path, monkeypatch, artifact_factory, workflow
+):
+    artifact = artifact_factory()
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(artifact.model_dump_json())
+    cases = WORKFLOW_CASES[workflow]
+    case_lookup = {(c.member_id, c.product_name): c for c in cases}
+    monkeypatch.setattr(
+        "automation.qualification.subprocess.run", _fake_worker(case_lookup)
+    )
+    record = qualify(artifact_path)
+    assert record["status"] == "approved", record
+    assert record["suite_error"] is None
+    assert record["capability_name"] == workflow
+    assert len(record["results"]) == len(cases)
+    assert all(r["status"] == "success" for r in record["results"])
+    assert approval_matches(artifact_path, artifact, Tenant(), PolicyConfig())
+
+
+def test_qualification_rejects_outputs_on_business_outcome(tmp_path, monkeypatch):
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(executor_artifact().model_dump_json())
+
+    real_run = subprocess.run
+
+    def run(cmd, *args, **kwargs):
+        if "automation.qualification_worker" not in cmd:
+            return real_run(cmd, *args, **kwargs)
+        member = cmd[cmd.index("--member") + 1]
+        product = cmd[cmd.index("--product") + 1]
+        case_lookup = {
+            (c.member_id, c.product_name): c
+            for c in WORKFLOW_CASES["read_account_balances"]
+        }
+        case = case_lookup[(member, product)]
+        outputs = None
+        if case.expected_status == "success":
+            current, available, holds = EXPECTED_BALANCES[member]
+            outputs = BalanceOutputs(
+                member_id=member,
+                product_name=product,
+                account_status="Active",
+                currency="USD",
+                current_balance=current,
+                available_balance=available,
+                active_holds=holds,
+                as_of="2026-09-13T12:00:00Z",
+            ).model_dump(mode="json")
+        else:
+            # A business outcome must never carry extraction outputs.
+            outputs = BalanceOutputs(
+                member_id="10001",
+                product_name="Primary Savings",
+                account_status="Active",
+                currency="USD",
+                current_balance="4250.75",
+                available_balance="4000.75",
+                active_holds="250.00",
+                as_of="2026-09-13T12:00:00Z",
+            ).model_dump(mode="json")
+
+        class Completed:
+            pass
+
+        completed = Completed()
+        completed.returncode = 0
+        completed.stdout = json.dumps(
+            {
+                "status": case.expected_status,
+                "code": case.expected_code,
+                "run_id": "abcdefabcdef",
+                "outputs": outputs,
+            }
+        )
+        return completed
+
+    monkeypatch.setattr("automation.qualification.subprocess.run", run)
+    record = qualify(artifact_path)
+    assert record["status"] == "rejected"
+    failed = [r for r in record["results"] if r["status"] == "failure"]
+    assert {r["case"] for r in failed} == {"missing-member", "closed-product"}

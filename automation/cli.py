@@ -65,9 +65,17 @@ def main():
                 help="Optional stable path for the verified capability",
             )
             p.add_argument(
-                "--goal",
-                default="Find the member identified by input_ref member_id and return the current and available balances for the active account identified by input_ref product_name.",
+                "--workflow",
+                choices=["balances", "transactions"],
+                default="balances",
+                help=(
+                    "Which typed capability to compile: 'balances' calls "
+                    "surface.balances() at finish, 'transactions' calls "
+                    "surface.recent_transactions(). This selects the extraction "
+                    "verb only; every step is still chosen live by the model."
+                ),
             )
+            p.add_argument("--goal", default=None)
             p.add_argument("--provider", choices=["openai", "fake"], default="openai")
             p.add_argument(
                 "--fake-script", default="tests/fixtures/fake_decisions.json"
@@ -121,7 +129,7 @@ def main():
                 args.policy,
             )
             print(json.dumps(record, indent=2))
-            return
+            raise SystemExit(0 if record["status"] == "approved" else 2)
         if args.interactive and not args.headed:
             parser.error("--interactive requires --headed")
         tenant = read_model(args.tenant, Tenant)
@@ -155,8 +163,23 @@ def main():
             )
             if provider.simulated:
                 print("SIMULATED OFFLINE PROVIDER — NOT genuine LLM discovery")
+            workflow = (
+                "read_recent_transactions"
+                if args.workflow == "transactions"
+                else "read_account_balances"
+            )
+            goal = args.goal or (
+                "Find the requested member and active account, then return its "
+                "five most recent transactions."
+                if workflow == "read_recent_transactions"
+                else "Find the member identified by input_ref member_id and return "
+                "the current and available balances for the active account "
+                "identified by input_ref product_name."
+            )
             result, capability = asyncio.run(
-                discover(args.goal, inputs, provider, tenant, config, policy)
+                discover(
+                    goal, inputs, provider, tenant, config, policy, workflow=workflow
+                )
             )
             if capability:
                 if args.artifact_out:

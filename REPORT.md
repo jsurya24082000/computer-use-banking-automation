@@ -6,7 +6,7 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 83 passing tests with no failures, errors, or
+The latest local verification records 138 passing tests with no failures, errors, or
 skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
 and command timings are in `evidence/repeatability-final.json`.
 
@@ -68,10 +68,14 @@ The original assignment PDF was read. The checked-in evidence now includes genui
 Artifact lifecycle is now explicit: discovery emits `draft`; the qualification
 command executes an approved copy in fresh subprocess/browser contexts and writes
 a sanitized hash-bound approval sidecar. Normal CLI replay rejects draft,
-qualifying, rejected, or stale/mismatched approved discovery artifacts. No
-genuine transaction discovery or three-attempt provider run is claimed in this
-checkout because model credentials were unavailable; the transaction extractor
-and qualification plumbing are implemented for the owner to run.
+qualifying, rejected, or stale/mismatched approved discovery artifacts. The
+caller now declares the workflow (`balances` or `transactions`) at discovery
+time; the goal is model input and never selects the artifact type. Genuine
+provider attempts were run for the transaction goal, but they predated the
+workflow discriminator and compiled `read_account_balances` capabilities, so no
+genuine `read_recent_transactions` artifact exists yet. The transaction
+extractor and qualification suite are implemented and covered by local tests
+for the owner to demonstrate live.
 
 Coverage status: the existing scenario matrix covers normal, missing/invalid
 member, absent/closed/restricted accounts, permission denial, session expiry,
@@ -84,7 +88,10 @@ ambiguous locators, sensitive-evidence redaction, ownership dispatch blocking,
 and resume checks. Two controlled tenant bindings are implemented
 (`tenant.json` and `tenant-secondary.json`); capability reuse requires a
 separate approval per tenant, and tenant, policy, or compatibility changes
-invalidate that approval. Tenant overrides cannot broaden the trusted
+invalidate that approval. Both bindings target the same local UI build (same
+entry URL, frame, product, UI version, and adapter), so the secondary binding
+demonstrates separately bound approvals rather than a different UI variant.
+Tenant overrides cannot broaden the trusted
 read-only policy.
 
 ## Latest owner-run validation
@@ -98,16 +105,25 @@ reclassified or rerun. Four successful capability artifacts were retained under
 `evidence/discovery-attempts/`.
 
 Each successful capability was approved for both `config/tenant.json` and
-`config/tenant-secondary.json`, producing eight approved sidecars. The balance
-capability hashes are `e2817b7d...7697c9a` and `8757db3b...e50b572`; the
-transaction capability hashes are `0604758c...a75ac2b` and
-`e98b2a3f...37ae2ab`. Approval records use distinct tenant digests, so this is
+`config/tenant-secondary.json`, producing eight approved sidecars. All four
+retained artifacts are `read_account_balances` capabilities; the
+transaction-goal attempts compiled balance-workflow artifacts because the
+typed `--workflow` discriminator did not exist at that revision. After the
+workflow schema change, the eight sidecars were regenerated through real
+qualification runs at revision `26dbf9d5` (artifact bytes unchanged); the
+approved hashes are `6b352786...b7ffe9a` and `ccdb2b9f...0e01855` under
+`balances/`, and `e26ed1b2...eb7e047` and `f67d96f3...ff81c56` under
+`transactions/` — the latter two are still balance-workflow capabilities.
+Approval records use distinct tenant digests, so this is
 capability reuse with separate tenant-bound approvals, not an unbound override.
 
 The four reports under `evidence/repeatability-matrix-*.json` contain 100
 model-free executions each (400 total), with zero unexpected mismatches. Each
 report records the expected/observed outcome categories and per-attempt
-verification. The current runner records min/median/max elapsed time, not
+verification. Because the artifacts under `transactions/` are balance-workflow
+capabilities, all four reports exercised the balance suite; the reports labeled
+transactions did not verify transaction outputs. The current runner records
+min/median/max elapsed time, not
 first-attempt/recovery counts or p95; those metrics remain unavailable.
 
 The real handoff evidence is preserved in

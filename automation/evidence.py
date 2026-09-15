@@ -128,13 +128,19 @@ class Evidence:
         path.write_text(json.dumps(self.sanitizer.clean(safe), indent=2))
         return str(path)
 
-    def intervention(self, step_id: str, code: str, context: dict):
+    def intervention(
+        self,
+        step_id: str,
+        code: str,
+        context: dict,
+        capability: str = "read_account_balances",
+    ):
         path = self.directory / "intervention.json"
         path.write_text(
             json.dumps(
                 {
                     "run_id": self.run_id,
-                    "capability": "read_account_balances",
+                    "capability": capability,
                     "step_id": step_id,
                     "reason": code,
                     "context": self.sanitizer.clean(context),
