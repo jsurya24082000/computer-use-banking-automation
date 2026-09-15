@@ -1,9 +1,33 @@
 # Measured run summary
 
-**Scope:** repository evidence already present at audit time. This document does not
-claim any run, interaction, model call, or metric that is not recorded in the cited
-files. Banking data is synthetic only; the live discovery used a real configured
-provider.
+**Scope:** historical evidence plus the separately recorded typed-workflow
+validation below. Banking data is synthetic only. The older sections and
+`manifest.json` retain their historical scope; new runs do not rewrite them.
+
+## Current typed-workflow validation
+
+| Check | Recorded result | Evidence |
+|---|---|---|
+| Genuine transaction discovery | SUCCESS; `read_recent_transactions`, transaction-list output and transaction final/resume checkpoints | `live-discovery/fb5619a7967f/`; `discovery-attempts/transactions/attempt-4-capability.json` |
+| Transaction qualification | 4/4 declared cases approved; source revision `b99c91a` | `discovery-attempts/transactions/attempt-4-capability.json.approval.json` |
+| Different-member model-free replay | SUCCESS; same approved artifact | `live-replay/3e2895258655/` |
+| Real transaction human takeover/resume | `automation -> paused -> human -> automation`, manual UI events, `resume_verified`, SUCCESS | `live-handoff-transactions/592ded6b14be/` |
+| Complete two-workflow matrix | 324/324 combinations, zero mismatches, all 36 extractions verified; clean source `1419e92` | `repeatability-matrix-1419e92-both-workflows.json`; matching `-runs/` diagnostics |
+| Preserved failed matrix | 324 attempts, 3 mismatches (33, 78, 79); exit 1 | `repeatability-matrix-b99c91a-both-workflows.json` |
+| Preserved startup regression | Stopped before replay due to Path/string validation; fixed in `1419e92` | Empty `repeatability-matrix-a398d50-both-workflows-runs/iterations.jsonl` |
+
+Paths in this table are relative to `evidence/`. The successful matrix also
+records 240 expected business outcomes, 24 expected permission denials and
+24 expected noninteractive interventions. It ran with the model key removed
+and provider imports blocked. The earlier matrix's per-run logs were deleted
+by its old harness; a precise original runtime cause cannot be established.
+Cleanup and diagnostic-timeout defects were independently reproduced and fixed,
+then all three previously mismatched cases passed in the complete rerun.
+
+Latest local verification: 158 tests passed in 313.08 seconds on Python 3.12.10;
+full Ruff passed. The tested changes were committed as `1419e92`. The older
+138-test `test-summary.json` remains unchanged during this validation stage.
+No hosted CI result is asserted here; check the PR's Ubuntu and Windows jobs.
 
 ## Genuine discovery
 
@@ -82,7 +106,7 @@ dependencies, Chromium, pytest, and Ruff on Ubuntu and Windows without model
 credentials. No hosted CI result is claimed here because it was not run in this
 audit.
 
-## Latest owner-run stages
+## Historical owner-run stages
 
 These records were copied from the owner checkout and verified against source
 revision `659d6f4`; they are not replacements for historical evidence.

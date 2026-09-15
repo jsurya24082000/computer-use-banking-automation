@@ -792,4 +792,3 @@ class BrowserSurface:
             account_status="Active",
             transactions=rows,
         )
-

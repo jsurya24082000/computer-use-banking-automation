@@ -6,9 +6,12 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local verification records 138 passing tests with no failures, errors, or
-skips. A ten-run model-free repeatability sample recorded 10 successes; its run IDs
-and command timings are in `evidence/repeatability-final.json`.
+The latest local full suite passed 158 tests on Python 3.12.10 (313.08 seconds),
+and full Ruff checks passed. `evidence/test-summary.json` remains the earlier
+138-test XML-derived record, not the latest run. The corrected two-workflow
+matrix passed all 324 requested combinations on clean revision `1419e92`;
+genuine transaction discovery, different-member replay, and real human
+transaction takeover/resume are now recorded below.
 
 ## 1. Architecture
 
@@ -28,7 +31,7 @@ Dynamic values are `input_ref` bindings. A search-result row binds its Member ID
 
 Replay is deterministic only for a fixed artifact, tenant, policy, browser surface, and application state; it is not a claim that model discovery or external systems are deterministic. Replay imports no provider. It validates inputs/artifact, resolves declared exact locators in order, requires one visible match, and verifies postconditions. A duplicate match stops immediately; it never falls through to an arbitrary first element. Table headers identify columns, row constraints select the intended record, and only then is the repeated View link resolved. The adapter waits for classified server-rendered navigation to finish, avoiding checks against an old iframe document.
 
-Completion independently verifies member, product, active status, currency, all monetary fields and a timezone-aware timestamp. Decimal strings are parsed with Decimal; available balance must equal current balance minus active holds, an explicit demo assumption. The LLM saying “finish” is insufficient.
+Completion independently verifies member, product, active status, and the declared workflow outputs. Balances additionally require currency, monetary fields and a timezone-aware timestamp; available balance must equal current balance minus active holds, an explicit demo assumption. Transactions require the expected table headers, valid dates and decimal amounts, newest-first order, and at most five rows. The LLM saying “finish” is insufficient.
 
 Missing members, invalid IDs and no eligible account are business outcomes. Permission denial is a hard failure, never a prompt to switch roles. A visible temporary error has one safe read-link retry by default; timeouts never trigger blind re-execution. Slow loads use bounded navigation waits. Discovery limits steps, repeated action/state pairs, total time and malformed responses. A run returns success, business_outcome, intervention_required, or failure, with stable error codes and sanitized state/evidence references. Tests independently exercise wrong-member, wrong-product, missing/malformed outputs and inconsistent balances.
 
@@ -54,7 +57,7 @@ No arbitrary model code is executed. Structured observations contain public labe
 
 ## 7. Cuts
 
-Implemented depth centers on one read-only capability. No transfers, account changes, desktop adapter, general web crawler, tenant-override service, persistent browser restoration, remote co-browsing UI, or model-based replay recovery is included. Name search/pagination is available to staff; automation demonstrates exact-ID and product selection. The recorded live run demonstrates validated OpenAI-compatible discovery, deterministic replay, and same-browser human handoff/resume; provider token, cost, and API-latency metrics are not recorded.
+Implemented depth centers on two typed read-only workflows on one vendor UI. No transfers, account changes, desktop adapter, general web crawler, tenant-override service, persistent browser restoration, remote co-browsing UI, or model-based replay recovery is included. Name search/pagination is available to staff; automation demonstrates exact-ID and product selection. The recorded live run demonstrates validated OpenAI-compatible discovery, deterministic replay, and same-browser human handoff/resume; provider token, cost, and API-latency metrics are not recorded.
 
 `BrowserSurface.frame()` has a genuine registration-race branch: an attached iframe
 can temporarily return no `content_frame()` before Playwright registers its named
@@ -70,20 +73,19 @@ command executes an approved copy in fresh subprocess/browser contexts and write
 a sanitized hash-bound approval sidecar. Normal CLI replay rejects draft,
 qualifying, rejected, or stale/mismatched approved discovery artifacts. The
 caller now declares the workflow (`balances` or `transactions`) at discovery
-time; the goal is model input and never selects the artifact type. Genuine
-provider attempts were run for the transaction goal, but they predated the
-workflow discriminator and compiled `read_account_balances` capabilities, so no
-genuine `read_recent_transactions` artifact exists yet. The transaction
-extractor and qualification suite are implemented and covered by local tests
-for the owner to demonstrate live.
+time; the goal is model input and never selects the artifact type. The historical
+transaction-goal attempts compiled `read_account_balances` capabilities.
+The new `transactions/attempt-4-capability.json` was genuinely discovered with
+`--workflow transactions`; it declares `read_recent_transactions`, a
+`transaction_list` output, and transaction final/resume checkpoints.
 
 Coverage status: the existing scenario matrix covers normal, missing/invalid
 member, absent/closed/restricted accounts, permission denial, session expiry,
 slow loading, bounded retry, and blocking-dialog intervention in the app/tests,
 and the qualification matrix now declares independent balance and transaction
 expectations for identity, product/status, ordering, count, dates, and decimal
-amounts. Live qualification across every combination remains owner-run and
-unrecorded. Adversarial safety coverage is substantial and includes forbidden routes/redirects/popups,
+amounts. The new transaction artifact passed its four-case qualification suite;
+the separate two-workflow replay matrix covers 324 selected combinations. Adversarial safety coverage is substantial and includes forbidden routes/redirects/popups,
 ambiguous locators, sensitive-evidence redaction, ownership dispatch blocking,
 and resume checks. Two controlled tenant bindings are implemented
 (`tenant.json` and `tenant-secondary.json`); capability reuse requires a
@@ -94,7 +96,7 @@ demonstrates separately bound approvals rather than a different UI variant.
 Tenant overrides cannot broaden the trusted
 read-only policy.
 
-## Latest owner-run validation
+## Historical owner-run validation
 
 The owner-run stages were performed from source revision `659d6f4` and are
 separate from the historical evidence above. Six genuine OpenAI discovery
@@ -135,3 +137,39 @@ The real handoff evidence is preserved in
 `INVALID_CREDENTIALS` and is not counted as a successful handoff. The retry
 records sanitized human interaction events, `automation -> paused -> human ->
 automation`, `resume_verified`, and final `SUCCESS`.
+
+## Typed transaction validation after the fixes
+
+- Code commits: `b99c91adf5274e1f821eadc4388ab6ded84d8fde` adds typed workflows;
+  `a398d503e883f84681cb8deeb2247e65ae7390aa` repairs cleanup/diagnostic handling
+  and strengthens matrix verification; `1419e92fb162c8ce08014a5cf9e20cf11f13f02e`
+  fixes retained evidence path conversion.
+- Genuine OpenAI-compatible/gpt-4o discovery: `live-discovery/fb5619a7967f/`.
+  The draft copy remains there; qualification approved
+  `discovery-attempts/transactions/attempt-4-capability.json` through all four
+  declared cases. Its sidecar records source revision `b99c91a` and canonical
+  artifact hash `c2d4a19cb04de890f42415e5bd184f324c50b7b8862bf81efd307688e9099330`.
+- Different-member replay with the model key removed succeeded in
+  `live-replay/3e2895258655/`, using that same approved artifact.
+- The first 324-case matrix at `b99c91a` failed at iterations 33, 78 and 79;
+  `repeatability-matrix-b99c91a-both-workflows.json` is retained unchanged.
+  Its temporary per-run logs were deleted by the old harness, so the precise
+  original runtime cause is unproven. Tests independently reproduced abandoned
+  cleanup tasks and unbounded failure snapshots; those defects were repaired.
+  The `a398d50` retry stopped before browser startup due to a Path/string
+  regression, fixed and regression-tested in `1419e92`. Its empty progress
+  journal is retained, not counted as a completed matrix.
+- `repeatability-matrix-1419e92-both-workflows.json` records clean source and
+  all 324 distinct requested combinations: 36 verified extractions, 240
+  expected business outcomes, 24 expected permission denials and 24 expected
+  noninteractive interventions. Zero mismatches, rejected artifacts, unverified
+  outputs or missing combinations; exit 0. Sanitized per-run diagnostics and a
+  flushed progress journal remain in the matching `-runs/` directory.
+- Real operator transaction takeover: `live-handoff-transactions/592ded6b14be/`
+  records `SESSION_EXPIRED`, `automation -> paused -> human -> automation`,
+  manual browser interactions, `resume_verified`, and final `SUCCESS`.
+  The intervention identifies `read_recent_transactions`; the operator entered
+  claim/resume in a visible terminal and performed sign-in in the same browser.
+
+All evidence paths in this section are under `evidence/`. The secondary binding
+still targets the same UI; these runs do not establish a second UI variant.

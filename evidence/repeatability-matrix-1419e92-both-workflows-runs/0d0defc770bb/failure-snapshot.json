@@ -1,0 +1,9 @@
+{
+  "screen": "member_search",
+  "signal": "member_not_found",
+  "control_count": 0,
+  "matching_member": false,
+  "matching_product": false,
+  "active": false,
+  "balance_fields_present": false
+}

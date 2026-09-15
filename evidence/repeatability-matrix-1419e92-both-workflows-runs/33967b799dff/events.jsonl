@@ -1,0 +1,12 @@
+{"at": "2026-09-15T06:20:21.508539+00:00", "event": "run_started", "run_id": "33967b799dff", "provenance": "deterministic_replay"}
+{"at": "2026-09-15T06:20:21.509617+00:00", "event": "replay_started", "run_id": "33967b799dff", "provenance": "deterministic_replay", "capability_sha256": "6b3527864bbc6dcd37577b13acebada595d5ca60f4c554ada2ed4f42fb7ffe9a"}
+{"at": "2026-09-15T06:20:22.879750+00:00", "event": "action_started", "run_id": "33967b799dff", "step_id": "s001", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:20:23.196935+00:00", "event": "action_verified", "run_id": "33967b799dff", "step_id": "s001", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:20:23.309687+00:00", "event": "action_started", "run_id": "33967b799dff", "step_id": "s002", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:20:23.547630+00:00", "event": "action_verified", "run_id": "33967b799dff", "step_id": "s002", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:20:23.781779+00:00", "event": "action_started", "run_id": "33967b799dff", "step_id": "s003", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:20:24.299332+00:00", "event": "action_verified", "run_id": "33967b799dff", "step_id": "s003", "action": "click", "screen": "member_search"}
+{"at": "2026-09-15T06:20:24.428726+00:00", "event": "action_started", "run_id": "33967b799dff", "step_id": "s004", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:20:24.729095+00:00", "event": "action_verified", "run_id": "33967b799dff", "step_id": "s004", "action": "fill", "screen": "member_search"}
+{"at": "2026-09-15T06:20:24.841728+00:00", "event": "action_started", "run_id": "33967b799dff", "step_id": "s005", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:20:25.102337+00:00", "event": "run_finished", "run_id": "33967b799dff", "status": "business_outcome", "code": "MEMBER_NOT_FOUND", "step_id": "s005"}

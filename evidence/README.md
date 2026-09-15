@@ -23,9 +23,40 @@ Run diagnostics omit invocation values and declared financial outputs. Failure e
 
 To regenerate offline evidence, start the bank and run `python tools/collect_offline_evidence.py`. To measure ten model-free replays of the genuine artifact, start the bank in the normal scenario and run `python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json`; it resets the synthetic database, blocks provider imports, writes aggregate metadata only, and preserves failures. To regenerate verification counts, run `python tools/verify.py`. Review live run folders before public submission; provider token/cost/latency metrics are not recorded, and no screenshots or raw browser traces are retained. New replay runs include a canonical capability SHA-256 in `replay_started`; historical logs retain their original format.
 
-## Latest owner-run validation
+## Current typed transaction validation
 
-The latest owner-run evidence was collected from source revision `659d6f4`.
+- Genuine discovery: `live-discovery/fb5619a7967f/`, using OpenAI-compatible/gpt-4o
+  on revision `b99c91a`. The draft artifact is preserved there.
+- Qualification: `discovery-attempts/transactions/attempt-4-capability.json.approval.json`
+  approves all four declared transaction cases, records `b99c91a`, and binds the
+  approved transaction artifact. No approval hash was edited manually.
+- Different-member replay without a model key: `live-replay/3e2895258655/`.
+- Real transaction takeover/resume: `live-handoff-transactions/592ded6b14be/`.
+  The operator claimed the run in a visible terminal, signed in in the same
+  browser, and requested resume. Events record the ownership transitions,
+  `resume_verified`, and `SUCCESS`; the intervention names the transaction workflow.
+- Corrected matrix: `repeatability-matrix-1419e92-both-workflows.json` records
+  clean revision `1419e92`, 324/324 distinct combinations, 36 verified
+  extractions, 240 expected business outcomes, 24 expected permission denials,
+  24 expected interventions, and zero unexpected mismatches. The matching
+  `-runs/` directory retains sanitized per-run evidence and `iterations.jsonl`.
+- Failed matrix: `repeatability-matrix-b99c91a-both-workflows.json` retains three
+  mismatches. Its old harness deleted the temporary per-run logs; the exact
+  original cause remains unproven. Regression tests reproduced cleanup and
+  diagnostic-timeout defects that were subsequently fixed.
+- Startup regression: `repeatability-matrix-a398d50-both-workflows-runs/iterations.jsonl`
+  is empty because a Path/string validation error stopped execution before
+  the first replay. The fix was committed as `1419e92`; this is not a completed run.
+
+The latest local full suite passed 158 tests (313.08 seconds, Python 3.12.10),
+and full Ruff checks passed. `test-summary.json` is the preserved earlier
+138-test XML-derived record. `manifest.json` is also historical: its old
+transaction-goal labels and hashes must be read with the corrections below,
+not as evidence of the new typed transaction workflow.
+
+## Historical owner-run validation
+
+The historical owner-run evidence was collected from source revision `659d6f4`.
 Stage 2 contains six genuine OpenAI discovery attempts: two successes and one
 preserved failure for each of the balances and transactions goals. All four
 successful attempts compiled `read_account_balances` capabilities — the

@@ -1,0 +1,54 @@
+{
+  "qualification_suite": "qualification-v1",
+  "capability_name": "read_recent_transactions",
+  "status": "approved",
+  "suite_error": null,
+  "artifact_sha256": "c2d4a19cb04de890f42415e5bd184f324c50b7b8862bf81efd307688e9099330",
+  "schema_version": "1.0",
+  "capability_version": "1.0.0",
+  "compatibility": {
+    "product": "demo-credit-union-staff-console",
+    "ui_version": "1.0",
+    "adapter": "playwright-dom-v1"
+  },
+  "policy_digest": "560be84fa4296b56a7908c423e1993cc23a8060ed5c08de7b2944a1fc281f50f",
+  "tenant_digest": "c0aca48b49018e7234bef75b7d48d57330920340b4b9b5ca0604051af96d5ca1",
+  "source_revision": "b99c91adf5274e1f821eadc4388ab6ded84d8fde",
+  "provenance": {
+    "kind": "llm_discovery",
+    "run_id": "fb5619a7967f",
+    "provider": "openai-compatible/gpt-4o",
+    "created_at": "2026-09-15T04:39:17.525129+00:00"
+  },
+  "results": [
+    {
+      "slot": 1,
+      "case": "transactions-10001",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 2,
+      "case": "transactions-10002",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 3,
+      "case": "transactions-missing-member",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    },
+    {
+      "slot": 4,
+      "case": "transactions-closed-product",
+      "status": "success",
+      "code": "SUCCESS",
+      "run_recorded": true
+    }
+  ],
+  "created_at": "2026-09-15T04:42:33.236974+00:00"
+}
