@@ -300,3 +300,61 @@ def test_assess_fails_on_incomplete_coverage(rm):
     # Fewer attempts than requested is also incomplete coverage.
     verdict = rm.assess(records, {"a": {"accepted": True}}, 5)
     assert verdict["ok"] is False
+
+
+@pytest.mark.parametrize("result_factory,artifact_factory", [
+    (_balance_result, executor_artifact),
+    (_transactions_result, transactions_artifact),
+])
+@pytest.mark.parametrize("field,value", [("member_id", "10002"), ("product_name", "Everyday Checking")])
+def test_matrix_verifies_output_identity(rm, result_factory, artifact_factory, field, value):
+    result = result_factory()
+    setattr(result.outputs, field, value)
+    assert not rm.verify_outputs(artifact_factory(), "10001", "Primary Savings", result)
+
+
+def test_assess_requires_positive_output_verification(rm):
+    record = _record(1, "a", "extraction_success")
+    assert not rm.assess([record], {"a": {"accepted": True}}, 1)["ok"]
+
+
+def test_assess_requires_every_requested_combination(rm):
+    record = {
+        **_record(1, "a", "extraction_success", verified=True),
+        "member_slot": "M1", "product": "Savings", "scenario": "normal",
+    }
+    required = [("a", "M1", "Savings", "normal"), ("a", "M2", "Savings", "normal")]
+    verdict = rm.assess([record, {**record, "iteration": 2}], {"a": {"accepted": True}}, 2, required)
+    assert not verdict["ok"]
+    assert verdict["missing_combinations"] == [required[1]]
+
+
+async def test_matrix_retains_progress_evidence_and_revision(rm, tmp_path, monkeypatch, capsys):
+    import json
+    from unittest.mock import AsyncMock
+
+    artifact = tmp_path / "capability.json"
+    artifact.write_text(executor_artifact().model_dump_json())
+    output = tmp_path / "matrix.json"
+    monkeypatch.setattr(rm.sys, "argv", [
+        "matrix", "--runs", "1", "--artifacts", str(artifact),
+        "--members", "10001", "--products", "Primary Savings", "--scenarios", "normal",
+        "--skip-seed", "--out", str(output),
+    ])
+    monkeypatch.setattr(rm, "check_bank_reachable", lambda tenant: True)
+    monkeypatch.setattr(rm, "run_one", AsyncMock(return_value=(_balance_result(), 0.1)))
+    with pytest.raises(SystemExit) as exited:
+        await rm.main()
+    assert exited.value.code == 0
+    report = json.loads(output.read_text())
+    assert len(report["source_revision"]) == 40
+    assert isinstance(report["source_dirty"], bool)
+    assert "1/1" in capsys.readouterr().out
+    evidence_root = Path(report["evidence_directory"])
+    records = [json.loads(line) for line in (evidence_root / "iterations.jsonl").read_text().splitlines()]
+    assert records == report["iterations"]
+    original = output.read_bytes()
+    with pytest.raises(SystemExit) as exited:
+        await rm.main()
+    assert exited.value.code != 0
+    assert output.read_bytes() == original

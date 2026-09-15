@@ -99,8 +99,10 @@ capabilities. The transaction-goal attempts ran before the typed `--workflow`
 discriminator existed, so the artifacts stored under
 `evidence/discovery-attempts/transactions/` compile the balance workflow; no
 `read_recent_transactions` artifact is recorded. Stage 3 sidecars were
-regenerated through real qualification runs at revision `26dbf9d5` after the
-workflow schema change; artifact bytes were not modified. Both tenant bindings
+regenerated through real qualification runs after the workflow schema change;
+they record `source_revision` `26dbf9d5` — the base commit, with the fixes
+still uncommitted at that point (now committed as `b99c91a`). Artifact bytes
+were not modified. Both tenant bindings
 target the same local UI build, so the secondary binding demonstrates
 per-tenant approval scoping, not a different UI variant. Stage 4 reports
 labeled transactions replayed those balance-workflow artifacts and verified

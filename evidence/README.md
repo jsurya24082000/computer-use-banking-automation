@@ -42,7 +42,9 @@ tenants, while the tenant digests differ and bind each approval separately.
 Both tenants bind the same local UI build, so the secondary binding proves
 per-tenant approval scoping rather than a different UI variant. After the
 workflow schema change, the sidecars were regenerated through real
-qualification runs at revision `26dbf9d5`; the artifact files themselves were
+qualification runs; they record `source_revision` `26dbf9d5`, which was the
+base commit — the fixes themselves were uncommitted then and are now committed
+as `b99c91a`. The artifact files themselves were
 not modified.
 
 Stage 4 contains four model-free reports, each with 100 recorded attempts and

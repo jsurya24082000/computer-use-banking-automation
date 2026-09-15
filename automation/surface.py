@@ -149,16 +149,18 @@ class BrowserSurface:
         # otherwise stall the whole run far beyond the caller's overall
         # timeout, because Playwright close/stop awaits do not always honour
         # outer cancellation promptly. Give each step its own short budget.
-        for action in (
-            self.browser.close() if self.browser else None,
-            self.pw.stop() if self.pw else None,
-        ):
-            if action is None:
-                continue
+        async def close(resource, method):
+            if resource is None:
+                return
             try:
-                await asyncio.wait_for(asyncio.shield(action), timeout=5)
+                await asyncio.wait_for(getattr(resource, method)(), timeout=5)
             except Exception:
-                pass
+                self.evidence.event("cleanup_failed", code=f"{method.upper()}_FAILED")
+
+        try:
+            await close(self.browser, "close")
+        finally:
+            await close(self.pw, "stop")
 
     async def _route(self, route):
         try:

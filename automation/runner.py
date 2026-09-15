@@ -141,7 +141,7 @@ class Execution:
 
 async def failure_result(exc, surface, evidence, step_id):
     try:
-        snap = await surface.snapshot()
+        snap = await asyncio.wait_for(surface.snapshot(), timeout=2)
     except Exception:
         snap = {"screen": "unavailable", "signal": "unknown"}
     ref = evidence.snapshot(snap)
@@ -165,6 +165,7 @@ async def failure_result(exc, surface, evidence, step_id):
         expected = evidence.sanitizer.text(exc.expected)
         observed = evidence.sanitizer.text(exc.observed)
     else:
+        evidence.event("runtime_error", code=type(exc).__name__, step_id=step_id)
         status = "failure"
         code = (
             "OVERALL_TIMEOUT"

@@ -43,7 +43,7 @@ import json
 import re
 import statistics
 import sys
-import tempfile
+import subprocess
 import time
 from pathlib import Path
 
@@ -162,6 +162,15 @@ def verify_outputs(capability, member_id: str, product_name: str, result) -> boo
     skipped one.
     """
     outputs = result.outputs
+    if (
+        result.status != "success"
+        or result.code != "SUCCESS"
+        or not isinstance(outputs, (BalanceOutputs, TransactionsOutputs))
+        or outputs.member_id != member_id
+        or outputs.product_name != product_name
+        or outputs.account_status != "Active"
+    ):
+        return False
     account = ACCOUNTS.get((member_id, product_name), {})
     if capability.name == "read_recent_transactions":
         expected = account.get("transactions")
@@ -187,7 +196,7 @@ def verify_outputs(capability, member_id: str, product_name: str, result) -> boo
     )
 
 
-def assess(records, artifact_reports, requested_runs: int) -> dict:
+def assess(records, artifact_reports, requested_runs: int, required_combinations=()) -> dict:
     """Decide whether the recorded matrix run may be reported as passing.
 
     A run fails when any expected outcome mismatches, any successful extraction
@@ -205,6 +214,7 @@ def assess(records, artifact_reports, requested_runs: int) -> dict:
         r["iteration"]
         for r in records
         if r["outputs_verified_in_memory"] is False
+        or (r["category"] == "extraction_success" and r["outputs_verified_in_memory"] is not True)
     ]
     rejected = [
         path for path, info in artifact_reports.items() if not info["accepted"]
@@ -213,11 +223,18 @@ def assess(records, artifact_reports, requested_runs: int) -> dict:
         r["artifact"] for r in records if r["category"] != "rejected_artifact"
     }
     uncovered = [p for p in artifact_reports if p not in exercised]
+    observed_combinations = {
+        (r["artifact"], r.get("member_slot"), r.get("product"), r.get("scenario"))
+        for r in records if r["category"] != "rejected_artifact"
+    }
+    missing = [c for c in required_combinations if c not in observed_combinations]
     ok = (
         not mismatches
         and not unverified
         and not rejected
         and not uncovered
+        and not missing
+        and bool(records)
         and len(records) == requested_runs
     )
     return {
@@ -225,6 +242,7 @@ def assess(records, artifact_reports, requested_runs: int) -> dict:
         "unverified_output_iterations": unverified,
         "rejected_required_artifacts": rejected,
         "uncovered_artifacts": uncovered,
+        "missing_combinations": missing,
         "ok": ok,
     }
 
@@ -354,6 +372,17 @@ async def main():
     if args.runs < 1:
         parser.error("--runs must be positive")
 
+    destination = Path(args.out)
+    evidence_root = destination.parent / f"{destination.stem}-runs"
+    if destination.exists() or evidence_root.exists():
+        parser.error("Output or evidence directory already exists; choose a new --out path")
+    source_revision = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+    ).strip()
+    source_dirty = bool(subprocess.check_output(
+        ["git", "status", "--porcelain", "--", "automation", "banking_app", "tools", "config"],
+        cwd=ROOT, text=True,
+    ).strip())
     tenant = read_model(args.tenant, Tenant)
     policy = read_model(args.policy, PolicyConfig)
 
@@ -386,8 +415,21 @@ async def main():
     cases = list(itertools.islice(itertools.cycle(combo_template), args.runs))
 
     records = []
-    with tempfile.TemporaryDirectory(prefix="repeatability-matrix-") as evidence_root:
+    evidence_root.mkdir(parents=True, exist_ok=False)
+    with (evidence_root / "iterations.jsonl").open("x") as journal:
+        def record_attempt(record):
+            records.append(record)
+            journal.write(json.dumps(record) + "\n")
+            journal.flush()
+            print(
+                f"{record['iteration']}/{args.runs} {record['category']} "
+                f"{record['actual_code']} matches={record['matches_expectation']} "
+                f"outputs_verified={record['outputs_verified_in_memory']}",
+                flush=True,
+            )
+
         for iteration, (artifact_path, member_id, product_name, scenario) in enumerate(cases, 1):
+            print(f"Starting {iteration}/{args.runs}", flush=True)
             expected_status, expected_code = expected_outcome(member_id, product_name, scenario)
             base = {
                 "iteration": iteration,
@@ -400,7 +442,7 @@ async def main():
                 "expected_code": expected_code,
             }
             if artifact_path not in capabilities:
-                records.append(
+                record_attempt(
                     {
                         **base,
                         "actual_status": "rejected_artifact",
@@ -433,7 +475,7 @@ async def main():
                 verified = False
             else:
                 verified = None
-            records.append(
+            record_attempt(
                 {
                     **base,
                     "actual_status": result.status,
@@ -449,11 +491,17 @@ async def main():
     counts = {}
     for record in records:
         counts[record["category"]] = counts.get(record["category"], 0) + 1
-    verdict = assess(records, artifact_reports, args.runs)
+    required = [(a, member_slot[m], p, s) for a, m, p, s in combo_template]
+    verdict = assess(records, artifact_reports, args.runs, required)
     elapsed_values = [r["elapsed_seconds"] for r in records if r["elapsed_seconds"] is not None]
 
     summary = {
         "tool": "tools/repeatability_matrix.py",
+        "source_revision": source_revision,
+        "source_dirty": source_dirty,
+        "evidence_directory": str(evidence_root),
+        "requested_combinations": len(set(required)),
+        "missing_combinations": verdict["missing_combinations"],
         "model_access": "disabled (automation.provider import is blocked in-process)",
         "requested_runs": args.runs,
         "recorded_attempts": len(records),
@@ -475,9 +523,8 @@ async def main():
         ),
         "iterations": records,
     }
-    destination = Path(args.out)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(summary, indent=2) + "\n")
+    with destination.open("x") as report:
+        report.write(json.dumps(summary, indent=2) + "\n")
     print(
         json.dumps(
             {
@@ -494,6 +541,7 @@ async def main():
                     "rejected_required_artifacts"
                 ],
                 "uncovered_artifacts": verdict["uncovered_artifacts"],
+                "missing_combination_count": len(verdict["missing_combinations"]),
                 "artifacts": [
                     {"path": a["path"], "accepted": a["accepted"], "reason": a.get("reason")}
                     for a in summary["artifacts"]

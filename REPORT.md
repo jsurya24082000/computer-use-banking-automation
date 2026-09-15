@@ -110,7 +110,10 @@ retained artifacts are `read_account_balances` capabilities; the
 transaction-goal attempts compiled balance-workflow artifacts because the
 typed `--workflow` discriminator did not exist at that revision. After the
 workflow schema change, the eight sidecars were regenerated through real
-qualification runs at revision `26dbf9d5` (artifact bytes unchanged); the
+qualification runs; they record `source_revision` `26dbf9d5`, the base commit —
+the workflow fixes were still uncommitted at that point and are now committed
+as `b99c91a` (`source_revision` is informational only and does not affect
+approval matching). Artifact bytes were unchanged; the
 approved hashes are `6b352786...b7ffe9a` and `ccdb2b9f...0e01855` under
 `balances/`, and `e26ed1b2...eb7e047` and `f67d96f3...ff81c56` under
 `transactions/` — the latter two are still balance-workflow capabilities.
