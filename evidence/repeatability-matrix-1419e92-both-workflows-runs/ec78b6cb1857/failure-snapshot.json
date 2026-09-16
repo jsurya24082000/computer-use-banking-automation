@@ -1,0 +1,9 @@
+{
+  "screen": "sign_in",
+  "signal": "session_expired",
+  "control_count": 0,
+  "matching_member": false,
+  "matching_product": false,
+  "active": false,
+  "balance_fields_present": false
+}

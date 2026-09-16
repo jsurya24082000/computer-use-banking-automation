@@ -86,6 +86,7 @@ class Checkpoint(StrictModel):
     verify_product: bool = False
     require_active: bool = False
     require_balances: bool = False
+    require_transactions: bool = False
 
 
 FINAL = Checkpoint(
@@ -94,6 +95,14 @@ FINAL = Checkpoint(
     verify_product=True,
     require_active=True,
     require_balances=True,
+)
+
+FINAL_TRANSACTIONS = Checkpoint(
+    screen="account_details",
+    verify_member=True,
+    verify_product=True,
+    require_active=True,
+    require_transactions=True,
 )
 
 
@@ -151,9 +160,12 @@ class OutputContract(StrictModel):
         "available_balance",
         "active_holds",
         "as_of",
+        "transactions",
     ]
-    type: Literal["string", "decimal", "timestamp"]
+    type: Literal["string", "decimal", "timestamp", "transaction_list"]
 
+
+Workflow = Literal["read_account_balances", "read_recent_transactions"]
 
 INPUT_CONTRACT = [
     InputContract(name=n, type="secret" if n.startswith("staff_") else "string")
@@ -178,6 +190,35 @@ OUTPUT_CONTRACT = [
         "as_of",
     )
 ]
+TRANSACTIONS_OUTPUT_CONTRACT = [
+    OutputContract(name="product_name", type="string"),
+    OutputContract(name="account_status", type="string"),
+    OutputContract(name="transactions", type="transaction_list"),
+]
+BALANCES_DESCRIPTION = (
+    "Read balances for an active account after verifying member and product."
+)
+TRANSACTIONS_DESCRIPTION = (
+    "Read up to five most recent transactions for an active account after "
+    "verifying member and product."
+)
+# Single source of truth: every workflow-dependent contract lives here, keyed
+# by the same discriminator carried on Capability.name. Discovery/replay/
+# qualification/matrix code must all dispatch through this map, never a
+# hardcoded balances() call, so a transactions workflow can never silently
+# succeed with balance-only outputs.
+WORKFLOW_OUTPUTS: dict[str, list[OutputContract]] = {
+    "read_account_balances": OUTPUT_CONTRACT,
+    "read_recent_transactions": TRANSACTIONS_OUTPUT_CONTRACT,
+}
+WORKFLOW_FINAL_CHECKPOINT: dict[str, Checkpoint] = {
+    "read_account_balances": FINAL,
+    "read_recent_transactions": FINAL_TRANSACTIONS,
+}
+WORKFLOW_DESCRIPTIONS = {
+    "read_account_balances": BALANCES_DESCRIPTION,
+    "read_recent_transactions": TRANSACTIONS_DESCRIPTION,
+}
 
 
 class Compatibility(StrictModel):
@@ -208,11 +249,14 @@ class Provenance(StrictModel):
 
 class Capability(StrictModel):
     schema_version: Literal["1.0"] = "1.0"
-    name: Literal["read_account_balances"] = "read_account_balances"
+    # This discriminator is the single place that selects which outputs a
+    # compiled/replayed capability must produce. Discovery, the executor, the
+    # final/resume checkpoints, qualification and the repeatability matrix all
+    # key off this same field so a transactions workflow can never succeed
+    # with balance-only outputs (or vice versa).
+    name: Workflow = "read_account_balances"
     version: Literal["1.0.0"] = "1.0.0"
-    description: str = (
-        "Read balances for an active account after verifying member and product."
-    )
+    description: str = BALANCES_DESCRIPTION
     compatibility: Compatibility = Field(default_factory=Compatibility)
     inputs: list[InputContract] = Field(default_factory=lambda: INPUT_CONTRACT.copy())
     outputs: list[OutputContract] = Field(
@@ -243,10 +287,16 @@ class Capability(StrictModel):
 
     @model_validator(mode="after")
     def enforce_contract(self):
-        if self.inputs != INPUT_CONTRACT or self.outputs != OUTPUT_CONTRACT:
-            raise ValueError("Unsupported input/output contract")
-        if self.final_checkpoint != FINAL or self.resume_checkpoint != FINAL:
-            raise ValueError("Balance verification may not be weakened")
+        if self.inputs != INPUT_CONTRACT:
+            raise ValueError("Unsupported input contract")
+        expected_outputs = WORKFLOW_OUTPUTS[self.name]
+        if self.outputs != expected_outputs:
+            raise ValueError(
+                "Declared outputs do not match this capability's workflow"
+            )
+        expected_final = WORKFLOW_FINAL_CHECKPOINT[self.name]
+        if self.final_checkpoint != expected_final or self.resume_checkpoint != expected_final:
+            raise ValueError("Verification checkpoint may not be weakened")
         if len({s.id for s in self.steps}) != len(self.steps):
             raise ValueError("Duplicate step IDs")
         if self.steps[-1].action.kind != "finish":

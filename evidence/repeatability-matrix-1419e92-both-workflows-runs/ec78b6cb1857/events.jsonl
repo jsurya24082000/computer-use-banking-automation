@@ -1,0 +1,17 @@
+{"at": "2026-09-15T06:16:47.295884+00:00", "event": "run_started", "run_id": "ec78b6cb1857", "provenance": "deterministic_replay"}
+{"at": "2026-09-15T06:16:47.295884+00:00", "event": "replay_started", "run_id": "ec78b6cb1857", "provenance": "deterministic_replay", "capability_sha256": "6b3527864bbc6dcd37577b13acebada595d5ca60f4c554ada2ed4f42fb7ffe9a"}
+{"at": "2026-09-15T06:16:48.776196+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s001", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:16:49.094312+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s001", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:16:49.308408+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s002", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:16:49.557905+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s002", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:16:49.665880+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s003", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:16:50.100175+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s003", "action": "click", "screen": "member_search"}
+{"at": "2026-09-15T06:16:50.214234+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s004", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:16:50.458564+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s004", "action": "fill", "screen": "member_search"}
+{"at": "2026-09-15T06:16:50.573497+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s005", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:16:50.897422+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s005", "action": "click", "screen": "search_results"}
+{"at": "2026-09-15T06:16:51.038819+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s006", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:16:51.607629+00:00", "event": "action_verified", "run_id": "ec78b6cb1857", "step_id": "s006", "action": "click", "screen": "member_overview"}
+{"at": "2026-09-15T06:16:51.873004+00:00", "event": "action_started", "run_id": "ec78b6cb1857", "step_id": "s007", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:16:52.178442+00:00", "event": "control_transition", "run_id": "ec78b6cb1857", "from_state": "automation", "to_state": "paused"}
+{"at": "2026-09-15T06:16:52.319131+00:00", "event": "run_finished", "run_id": "ec78b6cb1857", "status": "intervention_required", "code": "OPERATOR_UNAVAILABLE", "step_id": "s007"}

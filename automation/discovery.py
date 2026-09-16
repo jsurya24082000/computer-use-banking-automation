@@ -11,13 +11,15 @@ from .models import (
     AutomationError,
     Action,
     Capability,
-    FINAL,
     Ownership,
     Provenance,
     Result,
     RuntimeConfig,
     Step,
     Tenant,
+    WORKFLOW_DESCRIPTIONS,
+    WORKFLOW_FINAL_CHECKPOINT,
+    WORKFLOW_OUTPUTS,
 )
 from .policy import Policy, PolicyConfig
 from .runner import Execution, failure_result
@@ -25,8 +27,22 @@ from .surface import BrowserSurface
 
 
 async def discover(
-    goal, inputs, provider, tenant=None, config=None, policy_config=None, operator=None
+    goal,
+    inputs,
+    provider,
+    tenant=None,
+    config=None,
+    policy_config=None,
+    operator=None,
+    workflow="read_account_balances",
 ):
+    """`workflow` is a caller-declared discriminator (like member_id/product_name),
+    never inferred from the model's free-text goal or decisions. It only selects
+    which extraction verb (balances vs recent_transactions) the surface calls at
+    finish/checkpoint time; every step the model takes is still chosen live from
+    observations, never hardcoded."""
+    if workflow not in WORKFLOW_OUTPUTS:
+        raise AutomationError("UNSUPPORTED_WORKFLOW")
     tenant = tenant or Tenant()
     config = config or RuntimeConfig()
     run_id = uuid.uuid4().hex[:12]
@@ -34,7 +50,12 @@ async def discover(
     kind = "simulated_discovery" if provider.simulated else "llm_discovery"
     evidence.event("run_started", provenance=kind, provider=provider.identifier)
     surface = BrowserSurface(
-        tenant, inputs, config, Policy(policy_config or PolicyConfig()), evidence
+        tenant,
+        inputs,
+        config,
+        Policy(policy_config or PolicyConfig()),
+        evidence,
+        workflow=workflow,
     )
     execution = Execution(surface, evidence, operator=operator)
     steps = []
@@ -57,7 +78,9 @@ async def discover(
                                 "human-completed discovery needs a new recording",
                             )
                         observation = await surface.observe()
-                        before = observed_checkpoint(observation["screen"])
+                        before = observed_checkpoint(
+                            observation["screen"], workflow
+                        )
                         for attempt in range(config.invalid_response_retries + 1):
                             try:
                                 decision = await provider.decide(
@@ -135,11 +158,19 @@ async def discover(
                         await execution.step(step)
                         if execution.human_completed:
                             raise AutomationError("REVIEW_REQUIRED")
-                        step.after = observed_checkpoint(await surface.screen())
+                        step.after = observed_checkpoint(
+                            await surface.screen(), workflow
+                        )
                         steps.append(step)
                         if action.kind == "finish":
-                            await surface.verify(FINAL)
+                            final_checkpoint = WORKFLOW_FINAL_CHECKPOINT[workflow]
+                            await surface.verify(final_checkpoint)
                             capability = Capability(
+                                name=workflow,
+                                description=WORKFLOW_DESCRIPTIONS[workflow],
+                                outputs=list(WORKFLOW_OUTPUTS[workflow]),
+                                final_checkpoint=final_checkpoint.model_copy(),
+                                resume_checkpoint=final_checkpoint.model_copy(),
                                 steps=steps,
                                 provenance=Provenance(
                                     kind=kind,
@@ -156,7 +187,7 @@ async def discover(
                                 if secret and secret in text:
                                     raise AutomationError("ARTIFACT_SENSITIVE_DATA")
                             (evidence.directory / "capability.json").write_text(text)
-                            outputs = await surface.balances()
+                            outputs = await surface.extract_outputs()
                             surface.ownership = Ownership.COMPLETED
                             evidence.event("artifact_compiled", provenance=kind)
                             evidence.event(

@@ -4,8 +4,9 @@ The few evaluated scripts below are trusted, static adapter code, never model co
 Target fallbacks: declared order; exact unique visible match; ambiguity never falls through.
 """
 
+import asyncio
 import re
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol
 from urllib.parse import urljoin
@@ -66,6 +67,8 @@ class SurfaceAdapter(Protocol):
     async def execute(self, action: Action): ...
     async def verify(self, checkpoint: Checkpoint): ...
     async def balances(self) -> BalanceOutputs: ...
+    async def recent_transactions(self) -> TransactionsOutputs: ...
+    async def extract_outputs(self) -> "BalanceOutputs | TransactionsOutputs": ...
     async def snapshot(self) -> dict: ...
 
 
@@ -77,6 +80,7 @@ class BrowserSurface:
         config: RuntimeConfig,
         policy: Policy,
         evidence: Evidence,
+        workflow: str = "read_account_balances",
     ):
         self.tenant, self.inputs, self.config, self.policy, self.evidence = (
             tenant,
@@ -85,6 +89,11 @@ class BrowserSurface:
             policy,
             evidence,
         )
+        # Selects balances() vs recent_transactions() everywhere outputs are
+        # produced (extract/finish actions, checkpoint verification, final
+        # results). This is the only switch: it is never inferred from goal
+        # text or model output, only from the declared/compiled workflow.
+        self.workflow = workflow
         self.ownership = Ownership.AUTOMATION
         self.violation: AutomationError | None = None
         self.controls: dict[str, Target] = {}
@@ -136,10 +145,22 @@ class BrowserSurface:
             raise
 
     async def __aexit__(self, *args):
-        if self.browser:
-            await self.browser.close()
-        if self.pw:
-            await self.pw.stop()
+        # Teardown must stay bounded: a wedged browser or driver process can
+        # otherwise stall the whole run far beyond the caller's overall
+        # timeout, because Playwright close/stop awaits do not always honour
+        # outer cancellation promptly. Give each step its own short budget.
+        async def close(resource, method):
+            if resource is None:
+                return
+            try:
+                await asyncio.wait_for(getattr(resource, method)(), timeout=5)
+            except Exception:
+                self.evidence.event("cleanup_failed", code=f"{method.upper()}_FAILED")
+
+        try:
+            await close(self.browser, "close")
+        finally:
+            await close(self.pw, "stop")
 
     async def _route(self, route):
         try:
@@ -610,7 +631,7 @@ class BrowserSurface:
             elif action.kind == "check":
                 await self.verify(action.checkpoint)
             elif action.kind in ("extract", "finish"):
-                self.outputs = await self.balances()
+                self.outputs = await self.extract_outputs()
             await self.settle()
             self.assert_safe()
         except PlaywrightTimeout:
@@ -654,6 +675,16 @@ class BrowserSurface:
             raise AutomationError("ACCOUNT_NOT_ACTIVE")
         if checkpoint.require_balances:
             await self.balances()
+        if checkpoint.require_transactions:
+            await self.recent_transactions()
+
+    async def extract_outputs(self):
+        """Single dispatch point for produced outputs: never hardcoded to
+        balances(). The workflow discriminator decides, so a transactions
+        capability can never succeed with balance-only outputs."""
+        if self.workflow == "read_recent_transactions":
+            return await self.recent_transactions()
+        return await self.balances()
 
     async def balances(self):
         if await self.screen() != "account_details":
@@ -709,6 +740,13 @@ class BrowserSurface:
     async def recent_transactions(self):
         if await self.screen() != "account_details":
             raise AutomationError("CHECKPOINT_FAILED")
+        fields = await self.fields()
+        if fields.get("Member ID") != self.inputs.member_id:
+            raise AutomationError("MEMBER_MISMATCH")
+        if fields.get("Product name") != self.inputs.product_name:
+            raise AutomationError("PRODUCT_MISMATCH")
+        if fields.get("Account status") != "Active":
+            raise AutomationError("ACCOUNT_NOT_ACTIVE")
         frame = await self.frame()
         table = frame.get_by_role(
             "table", name="Recent synthetic transactions", exact=True
@@ -719,12 +757,20 @@ class BrowserSurface:
         if headers != ["Posted", "Description", "Amount", "Ledger balance"]:
             raise AutomationError("INVALID_TRANSACTION_HEADERS")
         rows = []
+        previous_date = None
         for row in await table.locator("tbody tr").all():
             cells = await visible_texts(row.locator("td"))
             if len(cells) != 4 or cells[0] == "No transactions":
                 continue
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", cells[0]):
                 raise AutomationError("INVALID_TRANSACTION_DATE")
+            try:
+                posted = date.fromisoformat(cells[0])
+            except ValueError:
+                raise AutomationError("INVALID_TRANSACTION_DATE") from None
+            if previous_date is not None and posted > previous_date:
+                raise AutomationError("TRANSACTIONS_NOT_NEWEST_FIRST")
+            previous_date = posted
             amounts = []
             for value in cells[2:]:
                 if not re.fullmatch(r"\$-?(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)\.[0-9]{2}", value):

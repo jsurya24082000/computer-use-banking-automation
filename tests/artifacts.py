@@ -10,11 +10,14 @@ from automation.models import (
     Provenance,
     Step,
     FINAL,
+    FINAL_TRANSACTIONS,
+    TRANSACTIONS_DESCRIPTION,
+    TRANSACTIONS_OUTPUT_CONTRACT,
 )
 from automation.surface import label_target, role_target
 
 
-def executor_artifact():
+def _executor_steps(final: Checkpoint):
     actions = [
         Action(
             kind="fill",
@@ -57,13 +60,30 @@ def executor_artifact():
     steps[2].after = Checkpoint(screen="member_search")
     steps[4].after = Checkpoint(screen="search_results")
     steps[5].after = Checkpoint(screen="member_overview", verify_member=True)
-    steps[6].after = FINAL.model_copy()
+    steps[6].after = final.model_copy()
+    return steps
+
+
+def _provenance():
+    return Provenance(
+        kind="hand_authored_executor_test",
+        run_id="000000000000",
+        provider="none",
+        created_at=utcnow(),
+    )
+
+
+def executor_artifact():
+    return Capability(steps=_executor_steps(FINAL), provenance=_provenance())
+
+
+def transactions_artifact():
     return Capability(
-        steps=steps,
-        provenance=Provenance(
-            kind="hand_authored_executor_test",
-            run_id="000000000000",
-            provider="none",
-            created_at=utcnow(),
-        ),
+        name="read_recent_transactions",
+        description=TRANSACTIONS_DESCRIPTION,
+        outputs=list(TRANSACTIONS_OUTPUT_CONTRACT),
+        final_checkpoint=FINAL_TRANSACTIONS.model_copy(),
+        resume_checkpoint=FINAL_TRANSACTIONS.model_copy(),
+        steps=_executor_steps(FINAL_TRANSACTIONS),
+        provenance=_provenance(),
     )

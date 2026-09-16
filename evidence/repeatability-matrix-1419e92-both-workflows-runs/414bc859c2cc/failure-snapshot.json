@@ -1,0 +1,9 @@
+{
+  "screen": "member_overview",
+  "signal": "no_eligible_account",
+  "control_count": 0,
+  "matching_member": true,
+  "matching_product": false,
+  "active": false,
+  "balance_fields_present": false
+}

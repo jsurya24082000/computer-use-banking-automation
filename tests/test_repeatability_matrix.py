@@ -13,9 +13,16 @@ from pathlib import Path
 import pytest
 
 from automation.evidence import utcnow
-from automation.models import Provenance, Tenant
+from automation.models import (
+    BalanceOutputs,
+    Provenance,
+    RecentTransaction,
+    Result,
+    Tenant,
+    TransactionsOutputs,
+)
 from automation.policy import PolicyConfig
-from tests.artifacts import executor_artifact
+from tests.artifacts import executor_artifact, transactions_artifact
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "repeatability_matrix.py"
 
@@ -161,3 +168,208 @@ def test_combo_generation_preserves_every_requested_run(rm):
         combo_template[1],
         combo_template[0],
     ]
+
+
+def _balance_result():
+    return Result(
+        status="success",
+        code="SUCCESS",
+        run_id="abcdefabcdef",
+        outputs=BalanceOutputs(
+            member_id="10001",
+            product_name="Primary Savings",
+            account_status="Active",
+            currency="USD",
+            current_balance="4250.75",
+            available_balance="4000.75",
+            active_holds="250.00",
+            as_of="2026-09-13T12:00:00Z",
+        ),
+    )
+
+
+def _transactions_result():
+    return Result(
+        status="success",
+        code="SUCCESS",
+        run_id="abcdefabcdef",
+        outputs=TransactionsOutputs(
+            member_id="10001",
+            product_name="Primary Savings",
+            account_status="Active",
+            transactions=[
+                RecentTransaction(
+                    posted_at="2026-09-12",
+                    description="Synthetic payroll credit",
+                    amount="150.00",
+                    ledger_balance="4250.75",
+                ),
+                RecentTransaction(
+                    posted_at="2026-09-10",
+                    description="Opening ledger balance",
+                    amount="4100.75",
+                    ledger_balance="4100.75",
+                ),
+            ],
+        ),
+    )
+
+
+def test_verify_outputs_dispatches_on_declared_workflow(rm):
+    balances = executor_artifact()
+    transactions = transactions_artifact()
+    assert rm.verify_outputs(
+        balances, "10001", "Primary Savings", _balance_result()
+    )
+    assert rm.verify_outputs(
+        transactions, "10001", "Primary Savings", _transactions_result()
+    )
+    # The wrong output type must fail verification, never skip it.
+    assert not rm.verify_outputs(
+        transactions, "10001", "Primary Savings", _balance_result()
+    )
+    assert not rm.verify_outputs(
+        balances, "10001", "Primary Savings", _transactions_result()
+    )
+
+
+def test_verify_outputs_rejects_incorrect_values(rm):
+    balances = executor_artifact()
+    wrong = _balance_result()
+    wrong.outputs.current_balance = "1.00"
+    assert not rm.verify_outputs(
+        balances, "10001", "Primary Savings", wrong
+    )
+    reordered = _transactions_result()
+    reordered.outputs.transactions.reverse()
+    assert not rm.verify_outputs(
+        transactions_artifact(), "10001", "Primary Savings", reordered
+    )
+
+
+def _record(iteration, artifact, category, matches=True, verified=None):
+    return {
+        "iteration": iteration,
+        "artifact": artifact,
+        "category": category,
+        "matches_expectation": matches,
+        "outputs_verified_in_memory": verified,
+    }
+
+
+def test_assess_passes_only_clean_complete_runs(rm):
+    reports = {"a": {"accepted": True}, "b": {"accepted": True}}
+    records = [
+        _record(1, "a", "extraction_success", verified=True),
+        _record(2, "b", "extraction_success", verified=True),
+    ]
+    assert rm.assess(records, reports, 2)["ok"] is True
+
+
+def test_assess_fails_on_incorrect_outputs(rm):
+    # Status/code matched expectations but the returned values did not.
+    reports = {"a": {"accepted": True}}
+    records = [_record(1, "a", "extraction_success", verified=False)]
+    verdict = rm.assess(records, reports, 1)
+    assert verdict["ok"] is False
+    assert verdict["unverified_output_iterations"] == [1]
+
+
+def test_assess_fails_on_rejected_required_artifact(rm):
+    reports = {
+        "a": {"accepted": True},
+        "b": {"accepted": False, "reason": "missing_or_stale_qualification_approval"},
+    }
+    records = [
+        _record(1, "a", "extraction_success", verified=True),
+        _record(2, "b", "rejected_artifact", matches=False),
+    ]
+    verdict = rm.assess(records, reports, 2)
+    assert verdict["ok"] is False
+    assert verdict["rejected_required_artifacts"] == ["b"]
+    assert verdict["uncovered_artifacts"] == ["b"]
+
+
+def test_assess_fails_on_incomplete_coverage(rm):
+    reports = {"a": {"accepted": True}, "b": {"accepted": True}}
+    # Artifact b was requested but never exercised.
+    records = [_record(1, "a", "extraction_success", verified=True)]
+    verdict = rm.assess(records, reports, 1)
+    assert verdict["ok"] is False
+    assert verdict["uncovered_artifacts"] == ["b"]
+    # Fewer attempts than requested is also incomplete coverage.
+    verdict = rm.assess(records, {"a": {"accepted": True}}, 5)
+    assert verdict["ok"] is False
+
+
+@pytest.mark.parametrize("result_factory,artifact_factory", [
+    (_balance_result, executor_artifact),
+    (_transactions_result, transactions_artifact),
+])
+@pytest.mark.parametrize("field,value", [("member_id", "10002"), ("product_name", "Everyday Checking")])
+def test_matrix_verifies_output_identity(rm, result_factory, artifact_factory, field, value):
+    result = result_factory()
+    setattr(result.outputs, field, value)
+    assert not rm.verify_outputs(artifact_factory(), "10001", "Primary Savings", result)
+
+
+def test_assess_requires_positive_output_verification(rm):
+    record = _record(1, "a", "extraction_success")
+    assert not rm.assess([record], {"a": {"accepted": True}}, 1)["ok"]
+
+
+def test_assess_requires_every_requested_combination(rm):
+    record = {
+        **_record(1, "a", "extraction_success", verified=True),
+        "member_slot": "M1", "product": "Savings", "scenario": "normal",
+    }
+    required = [("a", "M1", "Savings", "normal"), ("a", "M2", "Savings", "normal")]
+    verdict = rm.assess([record, {**record, "iteration": 2}], {"a": {"accepted": True}}, 2, required)
+    assert not verdict["ok"]
+    assert verdict["missing_combinations"] == [required[1]]
+
+
+async def test_run_one_accepts_path_for_retained_evidence(rm, tmp_path, monkeypatch):
+    from unittest.mock import AsyncMock
+
+    monkeypatch.setattr(rm, "set_scenario", lambda scenario: None)
+    replay = AsyncMock(return_value=_balance_result())
+    monkeypatch.setattr(rm, "replay", replay)
+    result, elapsed = await rm.run_one(
+        executor_artifact(), "10001", "Primary Savings", "normal",
+        Tenant(), PolicyConfig(), tmp_path,
+    )
+    assert result.status == "success"
+    assert elapsed >= 0
+    assert replay.await_args.args[3].evidence_dir == str(tmp_path)
+
+
+async def test_matrix_retains_progress_evidence_and_revision(rm, tmp_path, monkeypatch, capsys):
+    import json
+    from unittest.mock import AsyncMock
+
+    artifact = tmp_path / "capability.json"
+    artifact.write_text(executor_artifact().model_dump_json())
+    output = tmp_path / "matrix.json"
+    monkeypatch.setattr(rm.sys, "argv", [
+        "matrix", "--runs", "1", "--artifacts", str(artifact),
+        "--members", "10001", "--products", "Primary Savings", "--scenarios", "normal",
+        "--skip-seed", "--out", str(output),
+    ])
+    monkeypatch.setattr(rm, "check_bank_reachable", lambda tenant: True)
+    monkeypatch.setattr(rm, "run_one", AsyncMock(return_value=(_balance_result(), 0.1)))
+    with pytest.raises(SystemExit) as exited:
+        await rm.main()
+    assert exited.value.code == 0
+    report = json.loads(output.read_text())
+    assert len(report["source_revision"]) == 40
+    assert isinstance(report["source_dirty"], bool)
+    assert "1/1" in capsys.readouterr().out
+    evidence_root = Path(report["evidence_directory"])
+    records = [json.loads(line) for line in (evidence_root / "iterations.jsonl").read_text().splitlines()]
+    assert records == report["iterations"]
+    original = output.read_bytes()
+    with pytest.raises(SystemExit) as exited:
+        await rm.main()
+    assert exited.value.code != 0
+    assert output.read_bytes() == original

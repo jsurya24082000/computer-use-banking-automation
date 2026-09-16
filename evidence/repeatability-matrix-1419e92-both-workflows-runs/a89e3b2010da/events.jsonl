@@ -1,0 +1,14 @@
+{"at": "2026-09-15T06:41:57.546059+00:00", "event": "run_started", "run_id": "a89e3b2010da", "provenance": "deterministic_replay"}
+{"at": "2026-09-15T06:41:57.546059+00:00", "event": "replay_started", "run_id": "a89e3b2010da", "provenance": "deterministic_replay", "capability_sha256": "c2d4a19cb04de890f42415e5bd184f324c50b7b8862bf81efd307688e9099330"}
+{"at": "2026-09-15T06:41:59.005751+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s001", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:41:59.324185+00:00", "event": "action_verified", "run_id": "a89e3b2010da", "step_id": "s001", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:41:59.459748+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s002", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:41:59.732492+00:00", "event": "action_verified", "run_id": "a89e3b2010da", "step_id": "s002", "action": "fill", "screen": "sign_in"}
+{"at": "2026-09-15T06:41:59.857747+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s003", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:42:00.300507+00:00", "event": "action_verified", "run_id": "a89e3b2010da", "step_id": "s003", "action": "click", "screen": "member_search"}
+{"at": "2026-09-15T06:42:00.438647+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s004", "action": "fill", "rationale": "Fill declared input through an explicit binding."}
+{"at": "2026-09-15T06:42:00.752332+00:00", "event": "action_verified", "run_id": "a89e3b2010da", "step_id": "s004", "action": "fill", "screen": "member_search"}
+{"at": "2026-09-15T06:42:00.887010+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s005", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:42:01.244613+00:00", "event": "action_verified", "run_id": "a89e3b2010da", "step_id": "s005", "action": "click", "screen": "search_results"}
+{"at": "2026-09-15T06:42:01.376039+00:00", "event": "action_started", "run_id": "a89e3b2010da", "step_id": "s006", "action": "click", "rationale": "Activate uniquely resolved authorized control."}
+{"at": "2026-09-15T06:42:02.211421+00:00", "event": "run_finished", "run_id": "a89e3b2010da", "status": "business_outcome", "code": "NO_ELIGIBLE_ACCOUNT", "step_id": "s006"}

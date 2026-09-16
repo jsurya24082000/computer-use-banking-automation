@@ -12,9 +12,11 @@ Implemented: the FastAPI/SQLite banking app, iframe surface, reproducible scenar
 
 The checked-in evidence demonstrates **real Chromium execution with a genuine LLM discovery**, replay of its artifact with different inputs, a business outcome, a recovered read failure, and a real human takeover/resume. Simulated-provider runs remain under `evidence/offline/` and are labeled separately. A hand-authored artifact is also included solely for executor testing.
 
-The historical genuine discovery, deterministic replay, and human takeover/resume records are preserved under `evidence/live-discovery/`, `evidence/live-replay/`, and `evidence/live-handoff/`. The latest owner-run validation is separately preserved under `evidence/discovery-attempts/`, `evidence/repeatability-matrix-*.json`, and `evidence/live-handoff-stage6*/`; it includes four successful and two failed genuine discovery attempts, eight tenant-bound approvals, 400 model-free matrix executions, and one failed plus one successful real handoff attempt. Provider token/cost metrics and raw browser traces are not recorded. Nothing has been emailed; publishing still requires explicit authorization.
+The **primary benchmark** is `evidence/repeatability-matrix-1419e92-both-workflows.json`: clean revision `1419e92`, 324/324 distinct balance/transaction combinations, 36 verified extractions, 240 expected business outcomes, 24 expected noninteractive interventions, 24 expected permission denials, and zero unexpected mismatches. Business outcomes, interventions, and permission denials are not extraction successes. Genuine typed transaction discovery (`fb5619a7967f`), four-case qualification, different-member model-free replay (`3e2895258655`), and actual-person transaction takeover/resume (`592ded6b14be`) are recorded separately.
 
-See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), and [evidence/test-summary.json](evidence/test-summary.json) for what actually ran. [REPORT.md](REPORT.md) explains the design and limits.
+Historical evidence remains preserved. The older transactions-labeled artifacts declare `read_account_balances` and count only as balance evidence; each historical 100-run matrix exercised attempt 2 but not its listed attempt 3 artifact. The ten-run summary and its adjacent log directory contain disjoint run IDs and cannot be joined as one sample. An earlier 324-case matrix with three mismatches and a later startup regression are retained rather than rewritten. Provider tokens, cost, provider latency, raw browser traces, and a second UI implementation are not measured or demonstrated. See `REPORT.md` and `evidence/RUN_SUMMARY.md` for the complete limitations.
+
+See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), [evidence/test-verification-f545648.json](evidence/test-verification-f545648.json), and [evidence/clean-checkout-verification-f545648.json](evidence/clean-checkout-verification-f545648.json). The older `test-summary.json` remains unchanged as a 138-test historical record. [REPORT.md](REPORT.md) explains the design and limits.
 
 **Reviewer entry point:** start with [REPORT.md](REPORT.md), then [evidence/RUN_SUMMARY.md](evidence/RUN_SUMMARY.md), [evidence/manifest.json](evidence/manifest.json), and the cited sanitized event folders. Live records are distinct from simulated runs under `evidence/offline/`.
 
@@ -32,7 +34,7 @@ python -m playwright install chromium
 # Linux CI missing system packages: python -m playwright install --with-deps chromium
 ```
 
-`requirements.lock` pins runtime, test, and formatting dependencies. `pyproject.toml` also pins direct dependencies. The `.env.example` file is a reference only; variables are read from the process environment, not auto-loaded from that file.
+`requirements.lock` pins runtime, test, and formatting dependencies. `pyproject.toml` also pins direct dependencies. The `.env.example` file is a reference only; variables are read from the process environment, not auto-loaded from that file. These installation commands, full Ruff, bank startup, and both approved-artifact replay demos were rechecked from an isolated clean checkout at `f545648`; see `evidence/clean-checkout-verification-f545648.json`.
 
 ## Seed and launch the bank
 
@@ -64,6 +66,22 @@ export BANK_STAFF_PASSWORD='DemoBank!2026'
 
 The primary read-only run uses the teller. Permission denial stops execution; the engine never switches roles to bypass it.
 
+## Approved model-free demo
+
+With the seeded bank running, remove the model key and replay the approved
+balance and typed transaction artifacts. These exact commands passed from an
+isolated clean checkout at `f545648`:
+
+```powershell
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+```
+
+The first artifact declares `read_account_balances`; the second declares
+`read_recent_transactions`. Do not use historical transaction-directory
+attempts 2 or 3 as transaction demos: both declare the balance workflow.
+
 ## Genuine discovery and deterministic replay
 
 Configure your own model endpoint and key. The default adapter uses the OpenAI-compatible Chat Completions API and requires JSON-schema structured output support.
@@ -74,7 +92,7 @@ export LLM_MODEL='gpt-4o'
 # Optional: export LLM_BASE_URL='https://api.openai.com/v1'
 python -m automation.cli scenario normal
 python -m automation.cli discover --provider openai \
-  --member 10001 --product 'Primary Savings' --headed \
+  --member 10001 --product 'Primary Savings' --workflow balances --headed --timeout 300 --evidence-dir evidence/live-discovery \
   --goal 'Find the member identified by input_ref member_id and return current and available balances for the active product identified by input_ref product_name.' \
   --artifact-out evidence/discovery-attempts/balances/new-candidate-capability.json
 ```
@@ -82,9 +100,15 @@ python -m automation.cli discover --provider openai \
 Success writes a draft candidate at
 `evidence/discovery-attempts/balances/new-candidate-capability.json` and a
 provenance-linked copy under `evidence/live-discovery/<run-id>/capability.json`
-for the recorded live run. Qualify that candidate before replay; the measured
-approved artifact used below is
-`evidence/discovery-attempts/balances/attempt-2-capability.json`. A model's
+for the recorded live run. Use a fresh artifact path for a new discovery; never
+overwrite a historical candidate or its approval. Qualify the same candidate
+before replay:
+
+```powershell
+python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/new-candidate-capability.json --members 10001,10002 --tenant config/tenant.json --policy config/policy.json
+```
+
+A model's
 `finish` response cannot create an artifact unless the final state and every
 required output validate. Invalid model responses get at most two retries; the
 run has a 25-step and 300-second live-run budget when invoked with `--timeout
@@ -95,8 +119,8 @@ Now replay **the same discovered artifact with a different member**, with model 
 ```bash
 unset OPENAI_API_KEY
 # PowerShell: Remove-Item Env:OPENAI_API_KEY
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json \
-  --member 10002 --product 'Primary Savings'
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/new-candidate-capability.json \
+  --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
 ```
 
 Replay never constructs a provider or imports the provider module. It returns typed JSON to the caller. Declared output values are not copied into diagnostic logs.
@@ -105,8 +129,8 @@ Discovery writes a `draft` artifact. Qualify it against fresh replay invocations
 before normal replay:
 
 ```powershell
-python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --members 10001,10002 --tenant config/tenant.json --policy config/policy.json
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/new-candidate-capability.json --members 10001,10002 --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/new-candidate-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
 ```
 
 Qualification writes a bound sanitized sidecar at
@@ -115,48 +139,67 @@ an actor who can rewrite both artifact and approval files.
 
 The second read-only goal uses the same visible account-details screen:
 “Find the requested member and active account, then return its five most recent
-transactions.” The typed `surface.recent_transactions()` path enforces the
-accessible table headers, ISO dates, decimal strings, deterministic newest-first
-ordering supplied by the app, and a maximum of five rows. A separate discovered
-transaction artifact/evidence bundle is not claimed until a genuine provider run
-and qualification are performed.
+transactions.” Discovery compiles a `read_recent_transactions` capability only
+when invoked with `--workflow transactions`; the goal text is model input and
+never selects the artifact type. The typed `surface.recent_transactions()` path
+enforces the accessible table headers, ISO dates, decimal strings,
+deterministic newest-first ordering supplied by the app, and a maximum of five
+rows. The genuine transaction artifact is
+`evidence/discovery-attempts/transactions/attempt-4-capability.json`; its
+qualification sidecar and replay/handoff logs are retained separately from
+historical transaction-goal attempts that compiled balance artifacts.
 
 For three independent genuine attempts (each starts a separate CLI/browser run),
-use the owner’s private model environment:
+use the owner’s private model environment. The `--workflow` flag selects the
+typed capability to compile, the per-workflow artifact directory, and the
+default goal:
 
 ```powershell
-python tools/discovery_attempts.py --runs 3 --provider openai --out evidence/discovery-attempts.json
+python tools/discovery_attempts.py --runs 3 --provider openai --workflow balances --artifact-dir evidence/new-attempts/balances --out evidence/new-attempts-balances.json
 ```
 
 The runner records successes and failures without provider payloads. It does not
 claim genuine evidence when credentials or model access are unavailable.
 
-For the second capability, use the same command with the transaction goal and a
-separate artifact prefix:
+For the second capability, declare the transactions workflow explicitly; the
+goal is free text for the model and never selects the artifact type:
 
 ```powershell
-python -m automation.cli discover --provider openai --member 10001 --product 'Primary Savings' --headed --timeout 300 --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-out evidence/discovery-attempts/transactions/new-candidate-capability.json
+python -m automation.cli discover --provider openai --member 10001 --product 'Primary Savings' --headed --timeout 300 --workflow transactions --evidence-dir evidence/live-discovery --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-out evidence/discovery-attempts/transactions/new-candidate-capability.json
+python -m automation.cli qualify --artifact evidence/discovery-attempts/transactions/new-candidate-capability.json --members 10001,10002 --tenant config/tenant.json --policy config/policy.json
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/new-candidate-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --evidence-dir evidence/live-replay
 ```
 
 Run three independent attempts per workflow without substituting simulated
 responses:
 
 ```powershell
-python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --out evidence/discovery-attempts-balances.json
-python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --goal 'Find the requested member and active account, then return its five most recent transactions.' --out evidence/discovery-attempts-transactions.json
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --workflow balances --artifact-dir evidence/new-attempts/balances --out evidence/new-attempts-balances.json
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --workflow transactions --artifact-dir evidence/new-attempts/transactions --out evidence/new-attempts-transactions.json
 ```
 
-Every attempt remains recorded, including failures.
+Each attempt writes `attempt-N-capability.json` under its `--artifact-dir`;
+use the exact `artifact` path returned in the aggregate for qualification and
+replay. Numbering continues past existing artifact files. Choose fresh aggregate
+output paths for each batch: the discovery-attempt tool does not protect an
+existing aggregate from replacement. The examples above must not be rerun with
+the same `--out` path. Every attempted discovery, including failures, is recorded.
 
-The varied approved-artifact matrix is owner-run only until transaction and
-approval artifacts exist. Its intended command is:
+The approved-artifact matrix now covers both declared workflow types. The
+historical `transactions/attempt-2` and `attempt-3` artifacts still declare
+balances; `transactions/attempt-4` is the genuine transaction artifact. To
+repeat the full 324-combination selection using the seeded local bank:
 
 ```powershell
-python tools/repeatability_matrix.py --runs 100 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-primary.json
+python tools/repeatability_matrix.py --skip-seed --runs 324 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-4-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-new-batch.json
 ```
 
-This checkout does not claim that command was run; the matrix rejects
-unapproved artifacts, omits model credentials, preserves every failure, and
+The recorded equivalent is `evidence/repeatability-matrix-1419e92-both-workflows.json`.
+Use a fresh `--out` path each time: existing reports or associated `-runs/`
+directories are rejected. The tool retains sanitized per-run logs and a flushed
+`iterations.jsonl` journal, prints progress, and records source revision/dirty
+state. It rejects unapproved artifacts, blocks model-provider imports, and
 reports expected business outcomes separately from extraction success. Inputs
 from hand-authored or simulated artifacts are labeled as such and never count
 as genuine-discovery evidence.
@@ -182,19 +225,24 @@ three times independently. Each command starts its own browser/run and writes
 an aggregate containing successes and failures:
 
 ```powershell
-python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --goal 'Find the member identified by input_ref member_id and return current and available balances for the active product identified by input_ref product_name.' --out evidence/discovery-attempts-balances.json
-python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --goal 'Find the requested member and active account, then return its five most recent transactions.' --out evidence/discovery-attempts-transactions.json
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --workflow balances --goal 'Find the member identified by input_ref member_id and return current and available balances for the active product identified by input_ref product_name.' --artifact-dir evidence/new-attempts/balances --out evidence/new-attempts-balances.json
+python tools/discovery_attempts.py --runs 3 --provider openai --member 10001 --product 'Primary Savings' --workflow transactions --goal 'Find the requested member and active account, then return its five most recent transactions.' --artifact-dir evidence/new-attempts/transactions --out evidence/new-attempts-transactions.json
 ```
 
 The success signal is a zero exit status and a `status` of `success`; a
 business outcome or failure is retained in the aggregate. If one attempt
 fails, preserve its record and rerun only that command after correcting the
 reported setup/model issue. For each successfully compiled artifact, qualify
-against both normal members before replay:
+against both normal members before replay. Substitute the successful attempt
+numbers recorded in each aggregate; the preserved `attempt-2`/`attempt-3` files
+under `transactions/` are historical `read_account_balances` artifacts from the
+pre-workflow revision and are not transaction capabilities:
 
 ```powershell
-python -m automation.cli qualify --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
-python -m automation.cli qualify --artifact evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+$balanceArtifact = (Get-Content evidence/new-attempts-balances.json | ConvertFrom-Json).attempts | Where-Object status -eq success | Select-Object -First 1 -ExpandProperty artifact
+$transactionArtifact = (Get-Content evidence/new-attempts-transactions.json | ConvertFrom-Json).attempts | Where-Object status -eq success | Select-Object -First 1 -ExpandProperty artifact
+python -m automation.cli qualify --artifact "$balanceArtifact" --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli qualify --artifact "$transactionArtifact" --members 10001,10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
 ```
 
 The success signal is `"status": "approved"` and a
@@ -203,21 +251,27 @@ rejected; do not manually edit the sidecar. Replay only after approval:
 
 ```powershell
 Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
-python tools/repeatability_matrix.py --runs 100 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-2-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-primary.json
+python -m automation.cli replay --artifact "$transactionArtifact" --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python tools/repeatability_matrix.py --skip-seed --runs 324 --artifacts "$balanceArtifact,$transactionArtifact" --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-new-batch.json
 ```
 
-The matrix success signal is a completed sanitized output with exactly 100
-attempt records; it never imports or calls a provider. Failed qualification,
-business outcomes, interventions, refusals, and extraction failures remain
-separate categories. If the command stops before 100 records, preserve the
-partial file and rerun with a new output path after fixing the cause.
+The matrix verifies each artifact against the expectations of its declared
+capability name — a balance artifact can never satisfy the transaction suite
+and vice versa. The matrix success signal is a completed sanitized output with
+exactly 324 attempt records covering all 324 requested combinations and a zero
+exit status; incorrect outputs, rejected required artifacts, successful outputs
+without explicit positive verification, and incomplete coverage all fail the run. It never imports or calls a provider. Failed
+qualification, business outcomes, interventions, refusals, and extraction
+failures remain separate categories. If the command stops early, preserve the
+progress journal and per-run evidence, then rerun with a new output path after
+fixing the cause. A 100-run prefix cannot prove this 324-combination selection.
 
 For an actual same-browser handoff, use **Terminal 2** after restoring the
 approved artifact and keep **Terminal 1** running:
 
 ```powershell
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10001 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff
+python -m automation.cli replay --artifact "$transactionArtifact" --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff-transactions
 ```
 
 The expected signal is an `intervention_required` result and a visible
@@ -237,13 +291,17 @@ Synthetic expected results:
 
 **Demo assumption:** available balance = current balance minus active holds. SQLite stores integer cents. Decimal parsing and decimal strings are used at the output boundary. No binary floating-point arithmetic is used for money. The displayed “As of” is the fixed synthetic ledger snapshot timestamp, not the time of the automation run.
 
-The latest local repeatability sample ran the genuine artifact ten times with model access disabled, alternating the two documented normal members. All ten succeeded with in-memory output verification; see `evidence/repeatability-final.json` for run IDs and elapsed times.
+Historical `evidence/repeatability-final.json` reports ten successful verified
+replays, but its ten run IDs have **zero overlap** with the ten folders under
+`evidence/repeatability-final/`. Treat the summary and directory as separate,
+unjoined records—not as corroborating evidence for one sample. The 324-case
+matrix above is the primary repeatability benchmark.
 
-To repeat that measured sample without calling a model, start the bank in `normal`
-scenario and run:
+To run a new ten-replay sample without calling a model, start the bank in the
+`normal` scenario and choose a fresh output path:
 
 ```bash
-python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json
+python tools/repeatability.py --runs 10 --out evidence/repeatability-new.json
 ```
 
 The command resets the synthetic bank with the existing seed command, requires the
@@ -277,7 +335,7 @@ python tools/collect_offline_evidence.py
 
 This developer harness changes scenario configuration between runs. The automation packages never read that configuration or the banking database. Only the app and independent test harness do.
 
-Replay events from new runs include a SHA-256 of the canonical validated capability; credentials, invocation values, and financial outputs are excluded from diagnostics. Historical evidence is preserved without rewriting.
+Replay events from new runs include a SHA-256 of the canonical validated capability; credentials, invocation values, and financial outputs are excluded from diagnostics. Historical run logs and artifacts remain present. Eight historical approval sidecars were regenerated through qualification after the workflow schema change; their earlier versions remain recoverable from Git.
 
 ## Runtime scenarios
 
@@ -310,9 +368,9 @@ Use a computer with a visible desktop and the terminal in which you start the ru
 
 ```bash
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json \
-  --member 10001 --product 'Primary Savings' \
-  --headed --interactive --timeout 600
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json \
+  --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json \
+  --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff-transactions-new
 ```
 
 For the actual operator demonstration, do not automate the interaction:
@@ -320,18 +378,18 @@ For the actual operator demonstration, do not automate the interaction:
 ```powershell
 python -m automation.cli seed
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10001 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff-transactions-new
 ```
 
 When the browser pauses, the operator must type `claim`, reauthenticate in the
 existing browser window, confirm the requested account, and type `resume`.
-The demonstration remains incomplete until a real operator performs those steps.
+The recorded transaction demonstration is `evidence/live-handoff-transactions/592ded6b14be/` and completed successfully. A new demonstration only counts after an actual operator performs those steps.
 
 1. Automation reaches account details, encounters the expired session, and stops dispatching actions.
 2. The same terminal prints the intervention/run ID. Type `claim`.
 3. In the **existing browser window**, sign in with the demo teller credentials. Do not open a new window or restart the app. The bank rotates its authentication cookie normally but the browser process, context, and page are preserved.
 4. The bank returns you to the intended account details. Verify the member and product, then type `resume` in the original terminal.
-5. The engine checks origin, compatibility, member, product, status, currency, balances, and timestamp. It rejects an early or incorrect resume while leaving ownership with the human. Once verified, it finishes without repeating the account-opening step.
+5. The engine checks origin, compatibility, member, product, active status, and the declared transaction output. It rejects an early or incorrect resume while leaving ownership with the human. Once verified, it finishes without repeating the account-opening step.
 
 Type `abort` to end an intervention. The operator budget is five minutes; `--timeout` caps the whole run including browser startup and human time. A headless/noninteractive run returns `intervention_required` and closes the browser; it does not claim to preserve a remotely resumable session.
 
@@ -341,12 +399,10 @@ Human events record event category, element tag, frame category, and ownership t
 
 ```bash
 python -m pytest -q
-# Same real tests plus a sanitized evidence summary:
-python tools/verify.py
-python -m ruff check automation banking_app tests tools --select F
+python -m ruff check automation banking_app tests tools
 ```
 
-Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest recorded verification summary reports 83 passing tests with no failures, errors, or skips.
+Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest local full suite passed 158 tests with no failures (450.97 seconds, Python 3.12.10); full Ruff also passed. The new result is `evidence/test-verification-f545648.json`; `evidence/test-summary.json` remains the earlier 138-test XML-derived record. `tools/verify.py` writes that historical fixed path, so do not run it when preserving checked-in evidence—save a new named record instead.
 
 ## Layout and configuration
 
@@ -361,7 +417,7 @@ Tests launch a separate FastAPI server on an ephemeral local port with a private
 - `config/`: separate versioned tenant binding and trusted policy.
 - `tests/`, `tools/`: independent verification and explicitly labeled offline evidence harness.
 
-`BANK_DB` and `BANK_SCENARIO_FILE` configure only the app/setup harness. `BANK_SESSION_SECONDS` configures server-side expiry. `--tenant` and `--policy` select automation JSON configuration. `config/tenant.json` and `config/tenant-secondary.json` are the two validated controlled bindings; a capability can be qualified separately for either tenant, but approval is invalidated by any tenant, policy, or compatibility change. Tenant bindings cannot alter the capability or remove policy checks. The approval hash is an integrity link, not protection against an actor who controls both artifact and sidecar files. Approved selector overrides and desktop adapters are not implemented.
+`BANK_DB` and `BANK_SCENARIO_FILE` configure only the app/setup harness. `BANK_SESSION_SECONDS` configures server-side expiry. `--tenant` and `--policy` select automation JSON configuration. `config/tenant.json` and `config/tenant-secondary.json` are the two validated controlled bindings; a capability can be qualified separately for either tenant, but approval is invalidated by any tenant, policy, or compatibility change. Both bindings currently target the same local UI build — the same entry URL, frame, product, UI version, and adapter — so the secondary binding demonstrates separately bound tenant approvals, not a different UI variant. Tenant bindings cannot alter the capability or remove policy checks. The approval hash is an integrity link, not protection against an actor who controls both artifact and sidecar files. Approved selector overrides and desktop adapters are not implemented.
 
 ## Safety and public-submission checklist
 

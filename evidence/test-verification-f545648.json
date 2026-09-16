@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-09-16T21:15:16.941639+00:00",
+  "source_revision": "f545648355811704156cf494b93bb7ee65d296da",
+  "source_dirty_before": false,
+  "source_dirty_after": false,
+  "command": ".venv/Scripts/python -c \"import os,pytest; os.environ.pop('OPENAI_API_KEY',None); raise SystemExit(pytest.main(['-q']))\"",
+  "model_access": "disabled by removing OPENAI_API_KEY from the test process",
+  "environment": {
+    "python": "3.12.10",
+    "os": "Windows 11 10.0.26200",
+    "architecture": "AMD64",
+    "browser": "Playwright Chromium"
+  },
+  "counts": {
+    "passed": 158,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "duration_seconds": 450.97,
+  "exit_code": 0,
+  "notes": [
+    "This is a new verification record; evidence/test-summary.json remains unchanged as the earlier 138-test record.",
+    "The suite uses a fake provider for discovery tests and simulated operators for takeover tests; it is not genuine model or actual-person evidence."
+  ]
+}
