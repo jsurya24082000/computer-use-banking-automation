@@ -10,18 +10,19 @@ Evidence status is explicit; no provider response, human interaction, test resul
 | Business outcome | Included: missing member |
 | Recoverable error | Included: temporary account failure, bounded safe retry |
 | Intervention request | Included: session expiry; no operator available |
-| Genuine LLM discovery and resulting artifact | Included under `live-discovery/77525c9151e2/`; provenance is `llm_discovery` |
-| Replay of a genuinely discovered artifact | Included under `live-replay/19744e6936e7/`; uses the discovered artifact |
-| Real human takeover and resume | Included under `live-handoff/35587b0655e5/`; ownership and sanitized human events are recorded |
-| Repeatability sample | Included under `repeatability-final/` and `repeatability-final.json`; ten alternating model-free replays |
+| Genuine LLM discovery and resulting artifacts | Balance: `live-discovery/77525c9151e2/`; typed transactions: `live-discovery/fb5619a7967f/`; both provenance records say `llm_discovery` |
+| Replay of genuinely discovered artifacts | Historical balance: `live-replay/19744e6936e7/`; typed transactions: `live-replay/3e2895258655/` |
+| Actual-person takeover and resume | Balance: `live-handoff/35587b0655e5/`; typed transactions: `live-handoff-transactions/592ded6b14be/` |
+| Primary repeatability benchmark | `repeatability-matrix-1419e92-both-workflows.json`; 324 combinations, 36 verified extractions, zero mismatches |
+| Historical ten-run records | `repeatability-final.json` and `repeatability-final/`; their run-ID sets are disjoint and must not be joined as one sample |
 
-`manifest.json` links the actual offline and live run folders and statuses. `test-summary.json` is produced from pytest's real XML report, retaining only counts and timing. The live handoff evidence records a real operator interaction in the same browser process/context/page; simulated-operator tests remain separately labeled and do not substitute for that live run.
+`manifest.json` reconciles the current submission benchmark with the preserved historical records. `test-verification-f545648.json` records the latest 158-test run; `test-summary.json` remains the earlier 138-test XML-derived record. `clean-checkout-verification-f545648.json` records installation and approved-artifact replay checks from an isolated checkout. Actual-person handoff evidence is separate from simulated-operator tests.
 
 An earlier failed app-connectivity attempt is retained in `offline/e32067593416/`. It is not counted as a successful demonstration. No successful result was substituted for that failed attempt.
 
 Run diagnostics omit invocation values and declared financial outputs. Failure evidence is a sanitized structured snapshot rather than raw HTML, traces or unmasked screenshots. Test XML and captured output are temporary and are not included. The expected balances in the README are explicitly published synthetic sample values, separate from diagnostics.
 
-To regenerate offline evidence, start the bank and run `python tools/collect_offline_evidence.py`. To measure ten model-free replays of the genuine artifact, start the bank in the normal scenario and run `python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json`; it resets the synthetic database, blocks provider imports, writes aggregate metadata only, and preserves failures. To regenerate verification counts, run `python tools/verify.py`. Review live run folders before public submission; provider token/cost/latency metrics are not recorded, and no screenshots or raw browser traces are retained. New replay runs include a canonical capability SHA-256 in `replay_started`; historical logs retain their original format.
+To collect new evidence, always choose fresh output paths; do not rerun evidence tools over the historical paths in this directory. For a new ten-replay sample, start the bank in the normal scenario and run `python tools/repeatability.py --runs 10 --out evidence/repeatability-new.json`; it resets the synthetic database, blocks provider imports, and preserves failures in its new summary. To create a new verification count record, run the tests and save a new named record rather than replacing `test-summary.json`. Provider token/cost/latency metrics are not recorded, and no screenshots or raw browser traces are retained. New replay runs include a canonical capability SHA-256 in `replay_started`; historical logs retain their original format.
 
 ## Current typed transaction validation
 
@@ -48,11 +49,11 @@ To regenerate offline evidence, start the bank and run `python tools/collect_off
   is empty because a Path/string validation error stopped execution before
   the first replay. The fix was committed as `1419e92`; this is not a completed run.
 
-The latest local full suite passed 158 tests (313.08 seconds, Python 3.12.10),
-and full Ruff checks passed. `test-summary.json` is the preserved earlier
-138-test XML-derived record. `manifest.json` is also historical: its old
-transaction-goal labels and hashes must be read with the corrections below,
-not as evidence of the new typed transaction workflow.
+The latest local full suite passed 158 tests (450.97 seconds, Python 3.12.10),
+and full Ruff passed; `test-verification-f545648.json` records the exact commit,
+environment and command. `test-summary.json` is the preserved earlier 138-test
+record. `manifest.json` now labels historical transaction-goal artifacts as
+balance workflows and makes the 324-case report the primary benchmark.
 
 ## Historical owner-run validation
 
@@ -79,13 +80,13 @@ as `b99c91a`. The artifact files themselves were
 not modified.
 
 Stage 4 contains four model-free reports, each with 100 recorded attempts and
-zero unexpected mismatches: primary/secondary tenant crossed with the two
-attempt directories. Because every retained artifact is a `read_account_balances`
-capability, all four reports exercised balance extraction; the reports labeled
-transactions did not verify transaction outputs. The reports preserve category
-counts and per-attempt expected/observed status. They do not record
-first-attempt/recovery counts or
-p95 duration because the current runner does not measure those fields.
+zero reported mismatches. In total they contain 72 extractions, 256 expected
+business outcomes, 48 expected interventions, and 24 expected permission
+denials—not 400 successful extractions. All four reports exercised balance
+workflows, including those labeled transactions. Each report lists two artifacts
+but exercises only attempt 2, leaving attempt 3 uncovered. These historical
+reports are not the primary benchmark. The historical ten-run summary and its
+adjacent log directory also have zero overlapping run IDs.
 
 Stage 6 preserves both actual-person handoff attempts. The failed run
 `246101e0d773` ends with `INVALID_CREDENTIALS` before intervention. The

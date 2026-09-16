@@ -1,8 +1,70 @@
 {
   "recorded_at": "2026-09-13T07:02:52.589609+00:00",
+  "reconciled_at": "2026-09-16T21:15:16.941639+00:00",
+  "manifest_scope": "Current submission index plus preserved historical records; historical files are not rewritten by this reconciliation",
+  "primary_benchmark": {
+    "report": "repeatability-matrix-1419e92-both-workflows.json",
+    "source_revision": "1419e92fb162c8ce08014a5cf9e20cf11f13f02e",
+    "source_dirty": false,
+    "requested_combinations": 324,
+    "recorded_attempts": 324,
+    "verified_extractions": 36,
+    "expected_business_outcomes": 240,
+    "expected_interventions": 24,
+    "expected_permission_denials": 24,
+    "rejected_artifacts": 0,
+    "unexpected_mismatches": 0,
+    "missing_combinations": 0,
+    "model_access": "disabled_and_provider_import_blocked",
+    "note": "Business outcomes, interventions, and permission denials are not successful extractions"
+  },
+  "current_verification": {
+    "tests": "test-verification-f545648.json",
+    "clean_checkout": "clean-checkout-verification-f545648.json",
+    "exact_commit": "f545648355811704156cf494b93bb7ee65d296da"
+  },
+  "historical_limitations": [
+    "The four historical 100-run matrices all exercised balance-workflow artifacts and each left its listed attempt-3 artifact uncovered",
+    "The transactions-labeled historical artifacts declare read_account_balances and count only as balance evidence",
+    "repeatability-final.json and repeatability-final/ have disjoint run-ID sets and cannot corroborate one ten-run sample",
+    "offline/63695471525e/events.jsonl lacks a run_finished event",
+    "Most historical runs do not self-record source revision and dirty state"
+  ],
   "synthetic_data_only": true,
   "provider_evidence": "Genuine LLM discovery recorded; all banking data remains synthetic",
   "runs": [
+    {
+      "label": "genuine_typed_transaction_discovery",
+      "run_id": "fb5619a7967f",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "llm_discovery",
+      "provider": "openai-compatible/gpt-4o",
+      "events": "live-discovery/fb5619a7967f/events.jsonl",
+      "draft_capability": "live-discovery/fb5619a7967f/capability.json",
+      "approved_artifact": "discovery-attempts/transactions/attempt-4-capability.json",
+      "approval": "discovery-attempts/transactions/attempt-4-capability.json.approval.json",
+      "artifact_workflow": "read_recent_transactions"
+    },
+    {
+      "label": "typed_transaction_replay_different_member_no_model",
+      "run_id": "3e2895258655",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "deterministic_replay",
+      "events": "live-replay/3e2895258655/events.jsonl",
+      "artifact": "discovery-attempts/transactions/attempt-4-capability.json"
+    },
+    {
+      "label": "real_human_typed_transaction_takeover_and_resume",
+      "run_id": "592ded6b14be",
+      "status": "success",
+      "code": "SUCCESS",
+      "provenance": "deterministic_replay",
+      "events": "live-handoff-transactions/592ded6b14be/events.jsonl",
+      "intervention": "live-handoff-transactions/592ded6b14be/intervention.json",
+      "artifact_workflow": "read_recent_transactions"
+    },
     {
       "label": "genuine_llm_discovery",
       "run_id": "77525c9151e2",
@@ -33,12 +95,13 @@
       "intervention": "live-handoff/35587b0655e5/intervention.json"
     },
     {
-      "label": "repeatability_sample_ten_model_free_replays",
-      "status": "success",
-      "success_count": 10,
-      "failure_count": 0,
+      "label": "historical_repeatability_summary_and_unjoined_log_directory",
+      "status": "reported_success_with_linkage_gap",
+      "success_count_in_summary": 10,
+      "failure_count_in_summary": 0,
       "summary": "repeatability-final.json",
-      "runs": "repeatability-final/"
+      "runs": "repeatability-final/",
+      "limitation": "The summary and log directory contain disjoint run-ID sets and cannot be joined as one sample"
     },
     {
       "label": "simulated_discovery_real_browser",
@@ -88,8 +151,8 @@
       "failed_artifact": null
     },
     {
-      "label": "stage2_transaction_discovery_attempts",
-      "status": "2_success_1_failure",
+      "label": "historical_stage2_transaction_goal_attempts_compiling_balance_workflow",
+      "status": "2_cli_success_1_failure_0_typed_transaction_artifacts",
       "provider": "openai",
       "aggregate": "discovery-attempts-transactions.json",
       "successful_artifacts": [
@@ -97,7 +160,9 @@
         "discovery-attempts/transactions/attempt-3-capability.json"
       ],
       "failed_attempt_recorded_in": "discovery-attempts-transactions.json",
-      "failed_artifact": null
+      "failed_artifact": null,
+      "artifact_workflow": "read_account_balances",
+      "limitation": "Directory and goal labels say transactions, but successful artifacts declare the balance workflow"
     },
     {
       "label": "stage3_qualification_approvals",
@@ -107,27 +172,40 @@
         "secondary": "config/tenant-secondary.json"
       },
       "approval_root": "discovery-attempts/",
-      "artifact_hashes": {
+      "historical_artifact_hashes_at_collection": {
         "balances": [
           "e2817b7d03b706843b1ecd70e98c0a501f42a3114242bdd5885ace92c7697c9a",
           "8757db3b5758270019ab55f8f9f1f49620cd19523fa07bc9d9a305f36e50b572"
         ],
-        "transactions": [
+        "transaction_goal_balance_artifacts": [
           "0604758ca3c0b4b517b4743b63138b776b46e04ae1e4c1083c8b2ea38a75ac2b",
           "e98b2a3fd6e4439fc2e620293bf16bd3299ef7cbc5adecaeb9e7446b137ae2ab"
         ]
-      }
+      },
+      "current_approval_hashes_after_schema_change": {
+        "balances": [
+          "6b3527864bbc6dcd37577b13acebada595d5ca60f4c554ada2ed4f42fb7ffe9a",
+          "ccdb2b9fc5eb1dd40dacd5598a2ebbfe44d2bae9fa4185fe6c8ad99fe0e01855"
+        ],
+        "transaction_goal_balance_artifacts": [
+          "e26ed1b2f4d2c11ced2374939654f5285a6a4d19377b2b1096ea07955eb7e047",
+          "f67d96f3e91baf56288d2e8a77e82bea8baee78d233b0bc774392dc72ff81c56"
+        ]
+      },
+      "limitation": "All four historical artifacts declare read_account_balances; approvals were regenerated after the workflow schema change"
     },
     {
-      "label": "stage4_repeatability_matrix",
-      "status": "400_attempts_0_mismatches",
+      "label": "historical_stage4_balance_workflow_matrices",
+      "status": "400_attempts_72_extractions_256_business_outcomes_48_interventions_24_permission_denials_0_reported_mismatches",
       "reports": [
         "repeatability-matrix-primary-balances.json",
         "repeatability-matrix-primary-transactions.json",
         "repeatability-matrix-secondary-balances.json",
         "repeatability-matrix-secondary-transactions.json"
       ],
-      "model_access": "disabled_and_provider_import_blocked"
+      "model_access": "disabled_and_provider_import_blocked",
+      "artifact_workflow": "read_account_balances",
+      "limitation": "Each report listed two artifacts but exercised only attempt 2; attempt 3 is uncovered. Transactions-labeled reports are balance evidence."
     },
     {
       "label": "stage6_human_handoff_failed_attempt",
@@ -149,6 +227,10 @@
     "Provider token/cost/latency metrics were not recorded",
     "Human takeover evidence records event categories only; no screenshots or raw browser trace is retained",
     "The failed Stage 2 discovery attempts have aggregate status but no compiled capability artifact",
-    "The Stage 6 failed credential attempt has no intervention.json because it failed before session expiry"
+    "The Stage 6 failed credential attempt has no intervention.json because it failed before session expiry",
+    "Historical ten-run summary and log-directory IDs do not match",
+    "Historical 100-run matrices leave their listed attempt-3 artifacts uncovered",
+    "Historical transaction-goal artifacts declare read_account_balances",
+    "The secondary binding targets the same UI and is not a second UI implementation"
   ]
 }

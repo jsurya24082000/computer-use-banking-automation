@@ -6,12 +6,14 @@ event folders. Live records cover genuine-provider discovery, deterministic repl
 and same-browser handoff/resume; offline records are explicitly simulated or
 hand-authored.
 
-The latest local full suite passed 158 tests on Python 3.12.10 (313.08 seconds),
-and full Ruff checks passed. `evidence/test-summary.json` remains the earlier
-138-test XML-derived record, not the latest run. The corrected two-workflow
-matrix passed all 324 requested combinations on clean revision `1419e92`;
-genuine transaction discovery, different-member replay, and real human
-transaction takeover/resume are now recorded below.
+The latest local full suite passed 158 tests on Python 3.12.10 in 450.97 seconds,
+and full Ruff passed; `evidence/test-verification-f545648.json` records the exact
+commit, environment and command. The primary benchmark is
+`evidence/repeatability-matrix-1419e92-both-workflows.json`: 324/324 distinct
+balance/transaction combinations, 36 verified extractions, 240 expected business
+outcomes, 24 expected interventions, 24 expected permission denials, and zero
+unexpected mismatches. Non-extraction outcomes are reported separately and are
+not described as successful extractions.
 
 ## 1. Architecture
 
@@ -122,14 +124,15 @@ approved hashes are `6b352786...b7ffe9a` and `ccdb2b9f...0e01855` under
 Approval records use distinct tenant digests, so this is
 capability reuse with separate tenant-bound approvals, not an unbound override.
 
-The four reports under `evidence/repeatability-matrix-*.json` contain 100
-model-free executions each (400 total), with zero unexpected mismatches. Each
-report records the expected/observed outcome categories and per-attempt
-verification. Because the artifacts under `transactions/` are balance-workflow
-capabilities, all four reports exercised the balance suite; the reports labeled
-transactions did not verify transaction outputs. The current runner records
-min/median/max elapsed time, not
-first-attempt/recovery counts or p95; those metrics remain unavailable.
+The four historical primary/secondary reports contain 100 model-free executions
+each (400 total): 72 extractions, 256 expected business outcomes, 48 expected
+interventions, and 24 expected permission denials. They report zero mismatches,
+but every report lists two artifacts while exercising only attempt 2; attempt 3
+is uncovered. All four exercised balance workflows, including the reports labeled
+transactions. These records are secondary historical evidence, not the primary
+benchmark. Separately, `repeatability-final.json` and the adjacent
+`repeatability-final/` directory have disjoint run-ID sets and cannot corroborate
+a single ten-run sample.
 
 The real handoff evidence is preserved in
 `evidence/live-handoff-stage6/246101e0d773/` and
@@ -165,6 +168,10 @@ automation`, `resume_verified`, and final `SUCCESS`.
   noninteractive interventions. Zero mismatches, rejected artifacts, unverified
   outputs or missing combinations; exit 0. Sanitized per-run diagnostics and a
   flushed progress journal remain in the matching `-runs/` directory.
+- `test-verification-f545648.json` records the latest 158-test run on the final
+  pre-submission commit. `clean-checkout-verification-f545648.json` records a
+  fresh locked install, full Ruff, bank startup, and successful approved balance
+  and transaction replays with model access removed.
 - Real operator transaction takeover: `live-handoff-transactions/592ded6b14be/`
   records `SESSION_EXPIRED`, `automation -> paused -> human -> automation`,
   manual browser interactions, `resume_verified`, and final `SUCCESS`.

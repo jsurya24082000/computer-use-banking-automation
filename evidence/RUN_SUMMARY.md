@@ -24,10 +24,12 @@ by its old harness; a precise original runtime cause cannot be established.
 Cleanup and diagnostic-timeout defects were independently reproduced and fixed,
 then all three previously mismatched cases passed in the complete rerun.
 
-Latest local verification: 158 tests passed in 313.08 seconds on Python 3.12.10;
-full Ruff passed. The tested changes were committed as `1419e92`. The older
-138-test `test-summary.json` remains unchanged during this validation stage.
-No hosted CI result is asserted here; check the PR's Ubuntu and Windows jobs.
+Latest local verification: 158 tests passed in 450.97 seconds on Python 3.12.10;
+full Ruff passed. `test-verification-f545648.json` records exact commit
+`f545648`, environment, command and duration. The older 138-test
+`test-summary.json` remains unchanged. `clean-checkout-verification-f545648.json`
+records a fresh locked install and both approved replay demos. Push-triggered
+Ubuntu and Windows CI passed for `f545648`; PR-triggered CI is pending.
 
 ## Genuine discovery
 
@@ -53,7 +55,7 @@ does not include model token or cost data.
 | Scenario/evidence class | Status | Evidence | Recorded behavior |
 |---|---|---|---|
 | Simulated discovery in real Chromium | Success | `evidence/offline/5156ceafab4e/events.jsonl`; `evidence/offline/5156ceafab4e/capability.json` | `simulated_discovery`; artifact compiled; run finished `SUCCESS`. This is not genuine LLM evidence. |
-| Business outcome | Recorded | `evidence/offline/63695471525e/events.jsonl`; `evidence/offline/63695471525e/failure-snapshot.json` | Run finished with `business_outcome` / `MEMBER_NOT_FOUND`; snapshot is sanitized and contains no raw member identifier or financial output. |
+| Business-outcome attempt | Incomplete event log | `evidence/offline/63695471525e/events.jsonl`; `evidence/offline/63695471525e/failure-snapshot.json` | The manifest labels it `MEMBER_NOT_FOUND`, but the event log ends at `action_started` and has no `run_finished`; the claimed final outcome is not independently verified from this log. |
 | Recoverable read failure | Success | `evidence/offline/225308a6b01c/events.jsonl` | One recorded `RETRY_VISIBLE_READ_LINK` recovery, followed by account-details verification and `SUCCESS`. |
 | Intervention request without operator | Recorded | `evidence/offline/2659d4cad2b9/events.jsonl`; `evidence/offline/2659d4cad2b9/intervention.json`; `evidence/offline/2659d4cad2b9/failure-snapshot.json` | Ownership transitions to paused; run finishes `intervention_required` / `OPERATOR_UNAVAILABLE`. |
 | Live human takeover and resume | Success | `evidence/live-handoff/35587b0655e5/events.jsonl`; `evidence/live-handoff/35587b0655e5/intervention.json` | `automation → paused → human → automation`; 14 sanitized human interaction events; resume verification and final `SUCCESS`; recorded duration 51.489 seconds. |
@@ -71,8 +73,8 @@ does not include model token or cost data.
 
 | Check | Recorded result | Evidence | Notes |
 |---|---:|---|---|
-| Pytest suite | 138 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Latest `tools/verify.py` execution; Python 3.12.10 and Playwright Chromium. |
-| Test duration | 267.181 seconds | `evidence/test-summary.json` | Latest documented verification output; not used as a discovery/replay speed comparison. |
+| Current pytest suite | 158 passed, 0 failed, 0 errors, 0 skipped | `evidence/test-verification-f545648.json` | Python 3.12.10, Windows 11, Playwright Chromium; 450.97 seconds. |
+| Historical pytest summary | 138 tests, 0 failures, 0 errors, 0 skipped | `evidence/test-summary.json` | Preserved earlier XML-derived record; 267.181 seconds. |
 | Genuine-provider test | Not part of suite | `evidence/test-summary.json`; `evidence/live-discovery/77525c9151e2/events.jsonl` | The test suite uses a fake provider; the separate live run records genuine provider discovery. |
 
 ## Evidence handling and unavailable metrics
@@ -90,10 +92,11 @@ does not include model token or cost data.
 
 | Sample | Result | Evidence | Measured result |
 |---|---|---|---|
-| Ten alternating model-free replays of the genuine artifact | 10 success, 0 failure | `evidence/repeatability-final.json` | Slots A/B alternate the two documented normal members; outputs were verified in memory and aggregate evidence contains no output values or member IDs. Command elapsed time: min 3.875s, median 4.037s, max 5.144s. |
+| Ten-run summary | Reports 10 success, 0 failure | `evidence/repeatability-final.json` | Min 3.875s, median 4.037s, max 5.144s; output-verification flags are true. |
+| Adjacent ten log folders | 10 successful event logs | `evidence/repeatability-final/` | Their run IDs have zero overlap with the summary’s run IDs. |
 
-This is a local ten-run sample, not a production benchmark. No model access was
-used, and no financial output values are persisted in the repeatability evidence.
+These two historical records cannot be joined as one sample and are not the
+primary benchmark. The complete 324-case matrix is the submission benchmark.
 
 ## Traceability and CI
 
@@ -103,8 +106,9 @@ separators, UTF-8 encoded, SHA-256). The hash covers the full capability and no
 invocation values, credentials, or financial outputs; historical event logs were
 not rewritten. The CI workflow is `.github/workflows/verify.yml` and runs pinned
 dependencies, Chromium, pytest, and Ruff on Ubuntu and Windows without model
-credentials. No hosted CI result is claimed here because it was not run in this
-audit.
+credentials. Push-triggered CI run `34993937068` passed at exact commit
+`f545648`: Ubuntu reported 158 tests in 171.12 seconds and Windows reported 158
+tests in 337.16 seconds; both Ruff steps passed. PR-triggered CI remains pending.
 
 ## Historical owner-run stages
 
@@ -115,7 +119,7 @@ revision `659d6f4`; they are not replacements for historical evidence.
 |---|---|---|
 | 2 — genuine discovery | 6 attempts: 4 success, 2 failure | `evidence/discovery-attempts-balances.json`; `evidence/discovery-attempts-transactions.json`; successful artifacts under `evidence/discovery-attempts/` |
 | 3 — qualification | 8 approved records across primary and secondary tenants | `evidence/discovery-attempts/**/*.approval.json`; `config/tenant.json`; `config/tenant-secondary.json` |
-| 4 — model-free repeatability | 400 attempts, 0 unexpected mismatches | `evidence/repeatability-matrix-primary-balances.json`; `evidence/repeatability-matrix-primary-transactions.json`; `evidence/repeatability-matrix-secondary-balances.json`; `evidence/repeatability-matrix-secondary-transactions.json` |
+| 4 — model-free repeatability | 400 attempts: 72 extractions, 256 business outcomes, 48 interventions, 24 permission denials; 0 reported mismatches | `evidence/repeatability-matrix-primary-balances.json`; `evidence/repeatability-matrix-primary-transactions.json`; `evidence/repeatability-matrix-secondary-balances.json`; `evidence/repeatability-matrix-secondary-transactions.json` |
 | 6 — real human handoff | 1 preserved `INVALID_CREDENTIALS` failure and 1 `SUCCESS` | `evidence/live-handoff-stage6/246101e0d773/events.jsonl`; `evidence/live-handoff-stage6-retry/5c4f9a6d4fe9/events.jsonl`; successful `intervention.json` |
 
 Stage 2 audit note: all four retained artifacts are `read_account_balances`
@@ -130,7 +134,8 @@ were not modified. Both tenant bindings
 target the same local UI build, so the secondary binding demonstrates
 per-tenant approval scoping, not a different UI variant. Stage 4 reports
 labeled transactions replayed those balance-workflow artifacts and verified
-balance outputs.
+balance outputs. Each historical report lists attempt 2 and attempt 3, but only
+attempt 2 appears in its 100 iteration records; attempt 3 is uncovered.
 
 The successful Stage 6 event log verifies
 `automation -> paused -> human -> automation`, sanitized human interaction

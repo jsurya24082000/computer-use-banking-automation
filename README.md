@@ -12,9 +12,11 @@ Implemented: the FastAPI/SQLite banking app, iframe surface, reproducible scenar
 
 The checked-in evidence demonstrates **real Chromium execution with a genuine LLM discovery**, replay of its artifact with different inputs, a business outcome, a recovered read failure, and a real human takeover/resume. Simulated-provider runs remain under `evidence/offline/` and are labeled separately. A hand-authored artifact is also included solely for executor testing.
 
-The historical genuine discovery, deterministic replay, and human takeover/resume records are preserved under `evidence/live-discovery/`, `evidence/live-replay/`, and `evidence/live-handoff/`. The latest owner-run validation is separately preserved under `evidence/discovery-attempts/`, `evidence/repeatability-matrix-*.json`, and `evidence/live-handoff-stage6*/`; it includes four successful and two failed genuine discovery attempts, eight tenant-bound approvals, 400 model-free matrix executions, and one failed plus one successful real handoff attempt. All four artifacts from that historical stage are `read_account_balances` capabilities: the transaction-goal attempts ran before the typed `--workflow` discriminator existed. New genuine transaction discovery (`fb5619a7967f`), four-case qualification, different-member model-free replay (`3e2895258655`), and real transaction takeover/resume (`592ded6b14be`) have now succeeded. The two-workflow matrix at clean revision `1419e92` passed all 324 combinations with 36 verified extractions and zero mismatches. The earlier failed matrix and the startup-regression attempt remain preserved; see REPORT.md for the revision history and evidence links. Provider token/cost metrics and raw browser traces are not recorded. Nothing has been emailed; publishing still requires explicit authorization.
+The **primary benchmark** is `evidence/repeatability-matrix-1419e92-both-workflows.json`: clean revision `1419e92`, 324/324 distinct balance/transaction combinations, 36 verified extractions, 240 expected business outcomes, 24 expected noninteractive interventions, 24 expected permission denials, and zero unexpected mismatches. Business outcomes, interventions, and permission denials are not extraction successes. Genuine typed transaction discovery (`fb5619a7967f`), four-case qualification, different-member model-free replay (`3e2895258655`), and actual-person transaction takeover/resume (`592ded6b14be`) are recorded separately.
 
-See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), and [evidence/test-summary.json](evidence/test-summary.json) for what actually ran. [REPORT.md](REPORT.md) explains the design and limits.
+Historical evidence remains preserved. The older transactions-labeled artifacts declare `read_account_balances` and count only as balance evidence; each historical 100-run matrix exercised attempt 2 but not its listed attempt 3 artifact. The ten-run summary and its adjacent log directory contain disjoint run IDs and cannot be joined as one sample. An earlier 324-case matrix with three mismatches and a later startup regression are retained rather than rewritten. Provider tokens, cost, provider latency, raw browser traces, and a second UI implementation are not measured or demonstrated. See `REPORT.md` and `evidence/RUN_SUMMARY.md` for the complete limitations.
+
+See [evidence/README.md](evidence/README.md), [evidence/manifest.json](evidence/manifest.json), [evidence/test-verification-f545648.json](evidence/test-verification-f545648.json), and [evidence/clean-checkout-verification-f545648.json](evidence/clean-checkout-verification-f545648.json). The older `test-summary.json` remains unchanged as a 138-test historical record. [REPORT.md](REPORT.md) explains the design and limits.
 
 **Reviewer entry point:** start with [REPORT.md](REPORT.md), then [evidence/RUN_SUMMARY.md](evidence/RUN_SUMMARY.md), [evidence/manifest.json](evidence/manifest.json), and the cited sanitized event folders. Live records are distinct from simulated runs under `evidence/offline/`.
 
@@ -32,7 +34,7 @@ python -m playwright install chromium
 # Linux CI missing system packages: python -m playwright install --with-deps chromium
 ```
 
-`requirements.lock` pins runtime, test, and formatting dependencies. `pyproject.toml` also pins direct dependencies. The `.env.example` file is a reference only; variables are read from the process environment, not auto-loaded from that file.
+`requirements.lock` pins runtime, test, and formatting dependencies. `pyproject.toml` also pins direct dependencies. The `.env.example` file is a reference only; variables are read from the process environment, not auto-loaded from that file. These installation commands, full Ruff, bank startup, and both approved-artifact replay demos were rechecked from an isolated clean checkout at `f545648`; see `evidence/clean-checkout-verification-f545648.json`.
 
 ## Seed and launch the bank
 
@@ -63,6 +65,22 @@ export BANK_STAFF_PASSWORD='DemoBank!2026'
 ```
 
 The primary read-only run uses the teller. Permission denial stops execution; the engine never switches roles to bypass it.
+
+## Approved model-free demo
+
+With the seeded bank running, remove the model key and replay the approved
+balance and typed transaction artifacts. These exact commands passed from an
+isolated clean checkout at `f545648`:
+
+```powershell
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json
+```
+
+The first artifact declares `read_account_balances`; the second declares
+`read_recent_transactions`. Do not use historical transaction-directory
+attempts 2 or 3 as transaction demos: both declare the balance workflow.
 
 ## Genuine discovery and deterministic replay
 
@@ -174,7 +192,7 @@ balances; `transactions/attempt-4` is the genuine transaction artifact. To
 repeat the full 324-combination selection using the seeded local bank:
 
 ```powershell
-python tools/repeatability_matrix.py --skip-seed --runs 324 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-4-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-primary.json
+python tools/repeatability_matrix.py --skip-seed --runs 324 --artifacts evidence/discovery-attempts/balances/attempt-2-capability.json,evidence/discovery-attempts/transactions/attempt-4-capability.json --members 10001,10002,10004,10005,10006,10007 --products 'Primary Savings,Everyday Checking,Education Savings' --tenant config/tenant.json --policy config/policy.json --out evidence/repeatability-matrix-new-batch.json
 ```
 
 The recorded equivalent is `evidence/repeatability-matrix-1419e92-both-workflows.json`.
@@ -273,13 +291,17 @@ Synthetic expected results:
 
 **Demo assumption:** available balance = current balance minus active holds. SQLite stores integer cents. Decimal parsing and decimal strings are used at the output boundary. No binary floating-point arithmetic is used for money. The displayed “As of” is the fixed synthetic ledger snapshot timestamp, not the time of the automation run.
 
-The latest local repeatability sample ran the genuine artifact ten times with model access disabled, alternating the two documented normal members. All ten succeeded with in-memory output verification; see `evidence/repeatability-final.json` for run IDs and elapsed times.
+Historical `evidence/repeatability-final.json` reports ten successful verified
+replays, but its ten run IDs have **zero overlap** with the ten folders under
+`evidence/repeatability-final/`. Treat the summary and directory as separate,
+unjoined records—not as corroborating evidence for one sample. The 324-case
+matrix above is the primary repeatability benchmark.
 
-To repeat that measured sample without calling a model, start the bank in `normal`
-scenario and run:
+To run a new ten-replay sample without calling a model, start the bank in the
+`normal` scenario and choose a fresh output path:
 
 ```bash
-python tools/repeatability.py --runs 10 --out evidence/repeatability-final.json
+python tools/repeatability.py --runs 10 --out evidence/repeatability-new.json
 ```
 
 The command resets the synthetic bank with the existing seed command, requires the
@@ -313,7 +335,7 @@ python tools/collect_offline_evidence.py
 
 This developer harness changes scenario configuration between runs. The automation packages never read that configuration or the banking database. Only the app and independent test harness do.
 
-Replay events from new runs include a SHA-256 of the canonical validated capability; credentials, invocation values, and financial outputs are excluded from diagnostics. Historical evidence is preserved without rewriting.
+Replay events from new runs include a SHA-256 of the canonical validated capability; credentials, invocation values, and financial outputs are excluded from diagnostics. Historical run logs and artifacts remain present. Eight historical approval sidecars were regenerated through qualification after the workflow schema change; their earlier versions remain recoverable from Git.
 
 ## Runtime scenarios
 
@@ -346,9 +368,9 @@ Use a computer with a visible desktop and the terminal in which you start the ru
 
 ```bash
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json \
-  --member 10001 --product 'Primary Savings' \
-  --headed --interactive --timeout 600
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json \
+  --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json \
+  --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff-transactions-new
 ```
 
 For the actual operator demonstration, do not automate the interaction:
@@ -356,7 +378,7 @@ For the actual operator demonstration, do not automate the interaction:
 ```powershell
 python -m automation.cli seed
 python -m automation.cli scenario session_expiry
-python -m automation.cli replay --artifact evidence/discovery-attempts/balances/attempt-2-capability.json --member 10001 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600
+python -m automation.cli replay --artifact evidence/discovery-attempts/transactions/attempt-4-capability.json --member 10002 --product 'Primary Savings' --tenant config/tenant.json --policy config/policy.json --headed --interactive --timeout 600 --evidence-dir evidence/live-handoff-transactions-new
 ```
 
 When the browser pauses, the operator must type `claim`, reauthenticate in the
@@ -367,7 +389,7 @@ The recorded transaction demonstration is `evidence/live-handoff-transactions/59
 2. The same terminal prints the intervention/run ID. Type `claim`.
 3. In the **existing browser window**, sign in with the demo teller credentials. Do not open a new window or restart the app. The bank rotates its authentication cookie normally but the browser process, context, and page are preserved.
 4. The bank returns you to the intended account details. Verify the member and product, then type `resume` in the original terminal.
-5. The engine checks origin, compatibility, member, product, status, currency, balances, and timestamp. It rejects an early or incorrect resume while leaving ownership with the human. Once verified, it finishes without repeating the account-opening step.
+5. The engine checks origin, compatibility, member, product, active status, and the declared transaction output. It rejects an early or incorrect resume while leaving ownership with the human. Once verified, it finishes without repeating the account-opening step.
 
 Type `abort` to end an intervention. The operator budget is five minutes; `--timeout` caps the whole run including browser startup and human time. A headless/noninteractive run returns `intervention_required` and closes the browser; it does not claim to preserve a remotely resumable session.
 
@@ -377,12 +399,10 @@ Human events record event category, element tag, frame category, and ownership t
 
 ```bash
 python -m pytest -q
-# Same real tests plus a sanitized evidence summary:
-python tools/verify.py
 python -m ruff check automation banking_app tests tools
 ```
 
-Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest local full suite passed 158 tests with no failures (313.08 seconds, Python 3.12.10); full Ruff also passed. `evidence/test-summary.json` remains the earlier 138-test XML-derived record, rather than being overwritten to represent the newer run.
+Tests launch a separate FastAPI server on an ephemeral local port with a private temporary database. They cover schemas, binding, member/product selection, balances, business outcomes, timeouts, retry bounds, ambiguous rows/controls, forbidden requests and redirects, popups, redaction, ownership, resume verification, simulated compiler execution, and replay without model credentials. Test operator actions are explicitly simulated; they are not human evidence. The latest local full suite passed 158 tests with no failures (450.97 seconds, Python 3.12.10); full Ruff also passed. The new result is `evidence/test-verification-f545648.json`; `evidence/test-summary.json` remains the earlier 138-test XML-derived record. `tools/verify.py` writes that historical fixed path, so do not run it when preserving checked-in evidence—save a new named record instead.
 
 ## Layout and configuration
 

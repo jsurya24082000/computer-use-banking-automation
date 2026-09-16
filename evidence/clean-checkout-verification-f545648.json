@@ -1,0 +1,64 @@
+{
+  "recorded_at": "2026-09-16T21:15:16.941639+00:00",
+  "source_revision": "f545648355811704156cf494b93bb7ee65d296da",
+  "source_dirty_before": false,
+  "source_dirty_after": false,
+  "environment": {
+    "python": "3.12.10",
+    "os": "Windows 11 10.0.26200",
+    "architecture": "AMD64"
+  },
+  "checkout": {
+    "method": "local clone with no hardlinks into an ignored var/ directory",
+    "exact_revision_verified": true
+  },
+  "installation": {
+    "commands": [
+      "python -m venv .venv",
+      ".venv/Scripts/python -m pip install -r requirements.lock",
+      ".venv/Scripts/python -m pip install --no-deps -e .",
+      ".venv/Scripts/python -m playwright install chromium"
+    ],
+    "status": "success"
+  },
+  "static_verification": {
+    "command": ".venv/Scripts/python -m ruff check automation banking_app tests tools",
+    "status": "success"
+  },
+  "demo_setup": {
+    "commands": [
+      ".venv/Scripts/python -m automation.cli seed",
+      ".venv/Scripts/python -m automation.cli scenario normal",
+      ".venv/Scripts/python -m automation.cli serve"
+    ],
+    "bank_health_status": 200
+  },
+  "model_access": "OPENAI_API_KEY removed from each replay process",
+  "replays": [
+    {
+      "workflow": "read_account_balances",
+      "artifact": "evidence/discovery-attempts/balances/attempt-2-capability.json",
+      "artifact_sha256": "6b3527864bbc6dcd37577b13acebada595d5ca60f4c554ada2ed4f42fb7ffe9a",
+      "input_slot": "documented second normal member / Primary Savings",
+      "run_id": "25e28e2af4b5",
+      "status": "success",
+      "code": "SUCCESS",
+      "expected_output_fields_verified": true
+    },
+    {
+      "workflow": "read_recent_transactions",
+      "artifact": "evidence/discovery-attempts/transactions/attempt-4-capability.json",
+      "artifact_sha256": "c2d4a19cb04de890f42415e5bd184f324c50b7b8862bf81efd307688e9099330",
+      "input_slot": "documented second normal member / Primary Savings",
+      "run_id": "e8e0b6cf44e2",
+      "status": "success",
+      "code": "SUCCESS",
+      "expected_output_fields_verified": true
+    }
+  ],
+  "notes": [
+    "Replay diagnostics were written only under the ignored clean checkout var/ directory and are not submission evidence.",
+    "Synthetic staff environment values are intentionally omitted from this record.",
+    "No model provider was constructed or invoked."
+  ]
+}
