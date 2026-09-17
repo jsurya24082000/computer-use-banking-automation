@@ -31,4 +31,14 @@ jobs:
       - name: Run Ruff
         run: python -m ruff check automation banking_app tests tools --select F
       - name: Run tests
-        run: python -m pytest -q
+        run: python -m pytest -q --basetemp="${{ runner.temp }}/banking-pytest"
+      - name: Upload sanitized failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-evidence-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/banking-pytest/**/events.jsonl
+            ${{ runner.temp }}/banking-pytest/**/failure-snapshot.json
+          if-no-files-found: warn
+          retention-days: 7
