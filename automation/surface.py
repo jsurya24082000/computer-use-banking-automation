@@ -257,45 +257,70 @@ class BrowserSurface:
         if scope == "shell":
             return self.page
         iframe = self.page.locator(f'iframe[name="{self.tenant.frame_name}"]')
+        changed = asyncio.Event()
+
+        def notify(_frame):
+            changed.set()
+
+        events = ("frameattached", "framenavigated", "framedetached")
+        # Subscribe before inspecting state so registration cannot race the waiter.
+        for event in events:
+            self.page.on(event, notify)
         try:
-            await iframe.wait_for(
-                state="attached", timeout=self.config.action_timeout_ms
-            )
-        except PlaywrightTimeout:
-            raise AutomationError("FRAME_NOT_FOUND")
-        if await iframe.count() != 1:
-            raise AutomationError("AMBIGUOUS_FRAME")
-        handle = await iframe.element_handle()
-        frame = await handle.content_frame() if handle else None
-        if frame:
-            return frame
-        named = [
-            frame
-            for frame in self.page.frames
-            if frame.name == self.tenant.frame_name
-        ]
-        if len(named) > 1:
-            raise AutomationError("AMBIGUOUS_FRAME")
-        if named:
-            return named[0]
-        try:
-            await self.page.wait_for_event(
-                "frameattached",
-                predicate=lambda frame: frame.name == self.tenant.frame_name,
-                timeout=self.config.action_timeout_ms,
-            )
-        except PlaywrightTimeout:
-            raise AutomationError("FRAME_NOT_FOUND")
-        named = [
-            frame
-            for frame in self.page.frames
-            if frame.name == self.tenant.frame_name
-        ]
-        if len(named) != 1:
-            raise AutomationError(
-                "AMBIGUOUS_FRAME" if named else "FRAME_NOT_FOUND"
-            )
-        return named[0]
+            # One budget includes locator calls, registration, and any retries.
+            async with asyncio.timeout(self.config.action_timeout_ms / 1000):
+                while True:
+                    changed.clear()
+                    count = await iframe.count()
+                    named = [
+                        frame
+                        for frame in self.page.frames
+                        if frame.name == self.tenant.frame_name
+                        and not frame.is_detached()
+                    ]
+                    if count > 1 or len(named) > 1:
+                        raise AutomationError("AMBIGUOUS_FRAME")
+                    if count == 1:
+                        handle = await iframe.element_handle()
+                        if handle:
+                            try:
+                                frame = await handle.content_frame()
+                                connected = await handle.evaluate("e => e.isConnected")
+                            finally:
+                                await handle.dispose()
+                            # content_frame() may return an attached but still unnamed
+                            # frame. Never use it before registration is complete.
+                            if (
+                                connected
+                                and frame is not None
+                                and not frame.is_detached()
+                                and frame.name == self.tenant.frame_name
+                            ):
+                                # Recheck after awaits: another frame may have appeared.
+                                final_count = await iframe.count()
+                                if final_count > 1 or sum(
+                                    f.name == self.tenant.frame_name
+                                    and not f.is_detached()
+                                    for f in self.page.frames
+                                ) > 1:
+                                    raise AutomationError("AMBIGUOUS_FRAME")
+                                if (
+                                    final_count == 1
+                                    and not frame.is_detached()
+                                    and frame.name == self.tenant.frame_name
+                                ):
+                                    return frame
+                    # Events wake us immediately. Bounded condition polling also
+                    # catches metadata updates that do not emit a frame event.
+                    try:
+                        await asyncio.wait_for(changed.wait(), timeout=0.05)
+                    except TimeoutError:
+                        pass
+        except (TimeoutError, PlaywrightTimeout):
+            raise AutomationError("FRAME_NOT_FOUND") from None
+        finally:
+            for event in events:
+                self.page.remove_listener(event, notify)
 
     async def settle(self):
         frame = await self.frame()
