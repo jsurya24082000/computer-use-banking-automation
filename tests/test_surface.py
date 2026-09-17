@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 import uuid
@@ -174,7 +175,6 @@ async def test_delayed_frame_registration_is_bounded_and_event_driven(bank, inpu
                 document.body.appendChild(iframe);
             }, 100)"""
         )
-        await surface.page.wait_for_timeout(150)
         frame = await surface.frame()
         assert frame.name == "bank-content"
 
@@ -198,105 +198,168 @@ async def test_recent_transactions_are_typed_and_ordered(bank, inputs):
         assert result.transactions[1].posted_at == "2026-09-10"
 
 
+class RegistrationPage:
+    """Controllable registration state; no browser scheduling assumptions."""
+
+    def __init__(self):
+        self.frames = []
+        self.current = None
+        self.count = 1
+        self.connected = True
+        self.listeners = {}
+        self.content_calls = 0
+        self.disposed = 0
+        self.on_content = None
+
+    def on(self, event, callback):
+        self.listeners.setdefault(event, []).append(callback)
+
+    def remove_listener(self, event, callback):
+        self.listeners[event].remove(callback)
+
+    def emit(self, event, frame):
+        for callback in self.listeners.get(event, ()):
+            callback(frame)
+
+    def locator(self, selector):
+        page = self
+
+        class Handle:
+            async def content_frame(self):
+                page.content_calls += 1
+                if page.on_content:
+                    page.on_content()
+                return page.current
+
+            async def evaluate(self, expression):
+                return page.connected
+
+            async def dispose(self):
+                page.disposed += 1
+
+        class Locator:
+            async def wait_for(self, **kwargs):
+                return None
+
+            async def count(self):
+                return page.count
+
+            async def element_handle(self):
+                return Handle()
+
+        return Locator()
+
+
+def registration_surface(page, timeout=200):
+    surface = BrowserSurface(
+        Tenant(), None, RuntimeConfig(action_timeout_ms=timeout), None, None
+    )
+    surface.page = page
+    return surface
+
+
+def registered_frame(name="bank-content", detached=False):
+    return SimpleNamespace(name=name, is_detached=lambda: detached)
+
+
 @pytest.mark.asyncio
 async def test_attached_frame_falls_back_when_content_frame_temporarily_unavailable():
-    class Handle:
-        async def content_frame(self):
-            return None
+    page = RegistrationPage()
+    expected = registered_frame()
 
-    class Locator:
-        async def wait_for(self, **kwargs):
-            return None
+    def attach():
+        page.current = expected
+        page.frames = [expected]
+        page.emit("frameattached", expected)
 
-        async def count(self):
-            return 1
-
-        async def element_handle(self):
-            return Handle()
-
-    expected = SimpleNamespace(name="bank-content")
-
-    class Page:
-        frames = []
-
-        def locator(self, selector):
-            return Locator()
-
-        async def wait_for_event(self, event, predicate, timeout):
-            assert event == "frameattached"
-            assert predicate(expected)
-            self.frames = [expected]
-            return expected
-
-    surface = BrowserSurface(
-        Tenant(),
-        None,
-        RuntimeConfig(action_timeout_ms=100),
-        None,
-        None,
-    )
-    surface.page = Page()
-    assert await surface.frame() is expected
+    page.on_content = lambda: asyncio.get_running_loop().call_soon(attach)
+    assert await registration_surface(page).frame() is expected
+    assert page.content_calls >= 2
+    assert all(not callbacks for callbacks in page.listeners.values())
 
 
 @pytest.mark.asyncio
-async def test_duplicate_matching_frames_fail_closed():
-    class Locator:
-        async def wait_for(self, **kwargs):
-            return None
+async def test_unnamed_content_frame_waits_for_registration():
+    page = RegistrationPage()
+    expected = registered_frame(name="")
+    page.current = expected
+    page.frames = [expected]
 
-        async def count(self):
-            return 1
+    def register():
+        expected.name = "bank-content"
+        page.emit("framenavigated", expected)
 
-        async def element_handle(self):
-            return None
+    page.on_content = lambda: asyncio.get_running_loop().call_soon(register)
+    assert await registration_surface(page).frame() is expected
+    assert expected.name == "bank-content"
+    assert page.content_calls >= 2
+    assert page.disposed == page.content_calls
+    assert all(not callbacks for callbacks in page.listeners.values())
 
-    class Page:
-        frames = [
-            SimpleNamespace(name="bank-content"),
-            SimpleNamespace(name="bank-content"),
-        ]
 
-        def locator(self, selector):
-            return Locator()
+@pytest.mark.asyncio
+async def test_registration_event_during_inspection_is_not_lost():
+    page = RegistrationPage()
+    expected = registered_frame()
 
-    surface = BrowserSurface(
-        Tenant(), None, RuntimeConfig(action_timeout_ms=100), None, None
-    )
-    surface.page = Page()
+    def register_during_read():
+        # Wake before changed.wait() is entered, while this read still returns None.
+        page.frames = [expected]
+        page.emit("framenavigated", expected)
+        page.on_content = lambda: setattr(page, "current", expected)
+
+    page.on_content = register_during_read
+    assert await registration_surface(page).frame() is expected
+    assert page.content_calls == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("duplicate_dom", [False, True])
+async def test_duplicate_matching_frames_fail_closed(duplicate_dom):
+    page = RegistrationPage()
+    page.current = registered_frame()
+    page.frames = [page.current]
+    if duplicate_dom:
+        page.count = 2
+    else:
+        page.frames.append(registered_frame())
     with pytest.raises(AutomationError, match="AMBIGUOUS_FRAME"):
-        await surface.frame()
+        await registration_surface(page).frame()
+    assert all(not callbacks for callbacks in page.listeners.values())
 
 
 @pytest.mark.asyncio
-async def test_frame_registration_timeout_is_bounded():
-    from playwright.async_api import TimeoutError as PlaywrightTimeout
-
-    class Locator:
-        async def wait_for(self, **kwargs):
-            return None
-
-        async def count(self):
-            return 1
-
-        async def element_handle(self):
-            return None
-
-    class Page:
-        frames = []
-
-        def locator(self, selector):
-            return Locator()
-
-        async def wait_for_event(self, event, predicate, timeout):
-            raise PlaywrightTimeout("timed out")
-
-    surface = BrowserSurface(
-        Tenant(), None, RuntimeConfig(action_timeout_ms=100), None, None
+@pytest.mark.parametrize("state", ["missing", "unnamed", "detached", "disconnected"])
+async def test_frame_registration_timeout_is_bounded(state):
+    page = RegistrationPage()
+    page.current = registered_frame(
+        name="" if state == "unnamed" else "bank-content",
+        detached=state == "detached",
     )
-    surface.page = Page()
-    with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
-        await surface.frame()
+    page.frames = [page.current]
+    if state == "missing":
+        page.count = 0
+    if state == "disconnected":
+        page.connected = False
+    # Outer watchdog detects a broken resolver timeout without hanging the suite.
+    async with asyncio.timeout(1):
+        with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
+            await registration_surface(page, timeout=100).frame()
+    assert all(not callbacks for callbacks in page.listeners.values())
+
+
+@pytest.mark.asyncio
+async def test_frame_timeout_includes_stalled_locator_and_cleans_listeners():
+    page = RegistrationPage()
+
+    async def stalled_count():
+        await asyncio.Event().wait()
+
+    page.locator = lambda selector: SimpleNamespace(count=stalled_count)
+    async with asyncio.timeout(1):
+        with pytest.raises(AutomationError, match="FRAME_NOT_FOUND"):
+            await registration_surface(page, timeout=100).frame()
+    assert all(not callbacks for callbacks in page.listeners.values())
 
 
 @pytest.mark.browser
