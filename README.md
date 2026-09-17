@@ -23,7 +23,16 @@ A successful discovery produces a draft JSON capability. Qualification tests it 
 
 ## Measured results
 
-The submitted merge at [`eea76cf`](https://github.com/jsurya24082000/computer-use-banking-automation/commit/eea76cfb73db4fe58358dff089c247bdc58ce1b0) passed post-merge verification on both Ubuntu and Windows: **158 tests per platform**, with Ruff passing. [CI run](https://github.com/jsurya24082000/computer-use-banking-automation/actions/runs/35155656553).
+Verified revision [`1056a9e`](https://github.com/jsurya24082000/computer-use-banking-automation/commit/1056a9e5b29c61366075653afcec39676364012c), the merge of PR #4 into `master`, passed **165 tests per platform**, with Ruff passing on both:
+
+| Platform | Tests | Test duration |
+| --- | --- | --- |
+| Ubuntu | 165 passed | 259.74 seconds |
+| Windows | 165 passed | 388.90 seconds |
+
+These are measured post-merge results from [CI run 35187780101](https://github.com/jsurya24082000/computer-use-banking-automation/actions/runs/35187780101), tied to the revision above. See [GitHub Actions](https://github.com/jsurya24082000/computer-use-banking-automation/actions) for checks on later revisions. Passing checks do not resolve the intermittent Windows startup issue documented under [known limitations](#scope-and-known-limitations).
+
+Earlier revision [`eea76cf`](https://github.com/jsurya24082000/computer-use-banking-automation/commit/eea76cfb73db4fe58358dff089c247bdc58ce1b0) passed 158 tests per platform. Its [CI run](https://github.com/jsurya24082000/computer-use-banking-automation/actions/runs/35155656553) remains historical evidence, not the current test count.
 
 The primary replay benchmark covers **324 distinct combinations** across two workflows, six members, three products, and nine scenarios:
 
@@ -36,7 +45,7 @@ The primary replay benchmark covers **324 distinct combinations** across two wor
 | Unexpected mismatches | **0** |
 | Missing coverage / rejected artifacts | **0 / 0** |
 
-These are **324 expected outcomes, not 324 successful extractions**. The matrix was recorded on clean revision `1419e92`; it is separate from the final merge's CI results.
+These are **324 expected outcomes, not 324 successful extractions**. The matrix was recorded on clean revision `1419e92`; it is separate from the CI results above.
 
 Genuine discovery, different-member replay, and actual-person takeover evidence are retained for both workflow types. The correctly typed transactions workflow has one recorded genuine discovery success; this is a demonstration, not a statistically established discovery success rate.
 
@@ -280,6 +289,7 @@ The harness blocks provider imports and retains sanitized run logs plus a progre
 
 ## Scope and known limitations
 
+- **Intermittent Windows iframe startup failure.** An earlier Windows PR run failed two transaction tests with `FRAME_NOT_FOUND` before workflow execution. Both tests passed when rerun locally, and the post-merge verification cited above passed on both platforms. The root cause remains unresolved; passing runs do not establish that it is fixed. CI now retains existing sanitized event logs and failure snapshots when a job fails to support investigation. See the [recorded failure](https://github.com/jsurya24082000/computer-use-banking-automation/actions/runs/35183652706). No test was skipped or timeout increased by that diagnostic change.
 - **One UI implementation.** Two tenant bindings demonstrate approval scoping against the same local UI, not different vendor interfaces. Desktop adapters and approved selector overrides are not implemented.
 - **Limited genuine discovery sample.** The typed transactions workflow has one recorded genuine discovery success. Model tokens, cost, and provider-only latency were not measured.
 - **Bounded resume support.** Human resume requires the verified requested account state. Arbitrary intermediate workflow merging is not supported.
@@ -287,5 +297,6 @@ The harness blocks provider imports and retains sanitized run logs plus a progre
 - **History remains inspectable.** Earlier failures are retained. Eight historical approval sidecars were regenerated after schema changes; prior versions remain in Git. Some historical runs lack complete source/dirty-state provenance.
 
 The [technical report](REPORT.md) explains trade-offs and deliberately omitted work. The [evidence guide](evidence/README.md), [run summary](evidence/RUN_SUMMARY.md), and [manifest](evidence/manifest.json) distinguish genuine, simulated, current, and historical records.
+
 
 The technical report explains trade-offs and deliberately omitted work. The evidence guide, run summary, and manifest distinguish genuine, simulated, current, and historical records.
