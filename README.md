@@ -299,4 +299,4 @@ The harness blocks provider imports and retains sanitized run logs plus a progre
 The [technical report](REPORT.md) explains trade-offs and deliberately omitted work. The [evidence guide](evidence/README.md), [run summary](evidence/RUN_SUMMARY.md), and [manifest](evidence/manifest.json) distinguish genuine, simulated, current, and historical records.
 
 
-The technical report explains trade-offs and deliberately omitted work. The evidence guide, run summary, and manifest distinguish genuine, simulated, current, and historical records.
+
